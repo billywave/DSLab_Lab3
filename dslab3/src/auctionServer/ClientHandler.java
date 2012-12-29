@@ -1,9 +1,8 @@
 package auctionServer;
 
-import java.io.BufferedReader;
+import event.UserEvent;
+import exceptions.WrongEventTypeException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.rmi.AccessException;
@@ -12,12 +11,9 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
-
-import event.UserEvent;
-import exceptions.WrongEventTypeException;
 import org.apache.log4j.Logger;
-
 import rmi_Interfaces.MClientHandler_RO;
+import security.Base64Channel;
 import security.Channel;
 import security.TCPChannel;
 
@@ -73,7 +69,7 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		clientChannel = new TCPChannel(socket);
+		clientChannel = new Base64Channel(new TCPChannel(socket));
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
 //			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -108,6 +104,8 @@ public class ClientHandler implements Runnable {
 			long timestamp = logoutTimestamp.getTime();
 			mClientHandler.processEvent(new UserEvent(UserEvent.USER_DISCONNECTED, timestamp, protocol.getUser().getName()));
 		} catch (RemoteException e) {
+			logger.error("Failed to connect to the Analytics Server");
+		} catch( NullPointerException e) {
 			logger.error("Failed to connect to the Analytics Server");
 		} catch (WrongEventTypeException e) {
 			// wont happen

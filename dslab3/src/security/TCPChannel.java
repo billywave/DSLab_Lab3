@@ -52,6 +52,6 @@ public class TCPChannel implements Channel{
 
 	@Override
 	public void print(String line) {
-		throw new UnsupportedOperationException("Not supported yet.");
+		out.print(line);
 	}
 }
