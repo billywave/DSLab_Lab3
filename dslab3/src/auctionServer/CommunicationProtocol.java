@@ -141,6 +141,8 @@ public class CommunicationProtocol {
 				logger.error("Failed to connect to the Analytics Server");
 			} catch (WrongEventTypeException e) {
 				logger.error("Wront type of Event");
+			} catch (NullPointerException e) {
+				logger.error("Failed to connect to the Analytics Server");
 			}
 			logger.info("User " + parameterPart + " logged in");
 			return answer = "Successfully logged in as " + parameterPart;

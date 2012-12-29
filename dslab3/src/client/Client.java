@@ -9,6 +9,8 @@ import java.net.UnknownHostException;
 import loadTestingComponent.LoadTestClient;
 
 import org.apache.log4j.Logger;
+import security.Channel;
+import security.TCPChannel;
 
 /**
  * This class represents the Client and is the first Object 
@@ -32,7 +34,8 @@ public class Client {
 	boolean isTestingClient = false;
 	
 	Socket socket = null;
-    BufferedReader in = null;
+    //BufferedReader in = null;
+	Channel serverChannel;
     //UDPSocket udpSocket;
     
     ClientCommandListener commandListener;
@@ -81,7 +84,8 @@ public class Client {
         //Main_Client.clientExecutionService.execute(udpSocket);
         try {
             socket = new Socket(host, tcpPort);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			serverChannel = new TCPChannel(socket);
+            //in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	        } catch (UnknownHostException e) {
 	            System.err.println("Don't know about host: " + host + ".");
 	        } catch (IOException e) {
@@ -94,7 +98,7 @@ public class Client {
 	            Main_Client.clientExecutionService.shutdown(); // Disable new tasks from being submitted
         }
 		
-		commandListener = new ClientCommandListener(socket, udpPort, this);
+		commandListener = new ClientCommandListener(serverChannel, udpPort, this);
     	
 		if (!isTestingClient) {
 			Main_Client.clientExecutionService.execute(commandListener);
@@ -111,7 +115,7 @@ public class Client {
         	String incommingMessage;
        	 
     	    try {
-    	    	while((incommingMessage = in.readLine()) != null) {
+    	    	while((incommingMessage = serverChannel.readLine()) != null) {
     	    		// server shut down
     	    		if (incommingMessage.equals("shutdownServer")) {
     	    			System.out.println("Sorry, the Server just went offline, you have been logged out automatically. " +
@@ -159,7 +163,7 @@ public class Client {
 		try {
 			//udpSocket.shutdown();
 			socket.close();
-			in.close();
+			serverChannel.close();
 		} catch (IOException e) {
 			// in is already closed or not opened
 		} catch (NullPointerException e) {

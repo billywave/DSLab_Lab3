@@ -18,6 +18,8 @@ import exceptions.WrongEventTypeException;
 import org.apache.log4j.Logger;
 
 import rmi_Interfaces.MClientHandler_RO;
+import security.Channel;
+import security.TCPChannel;
 
 /**
  * Has the TCP connection to a cirtain client. for the requests comming over the
@@ -33,8 +35,9 @@ public class ClientHandler implements Runnable {
 	// interpretation for the client- request- string
 	CommunicationProtocol protocol;
 	// Streams for TCP- communication
-	PrintWriter out;
-	BufferedReader in;
+	//PrintWriter out;
+	//BufferedReader in;
+	Channel clientChannel;
 	UserManagement userManagement;
 	// for RMI
 	Registry registry;
@@ -70,12 +73,13 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		try {
-			out = new PrintWriter(socket.getOutputStream());
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		} catch (IOException e) {
-			logger.error("Failed to bind input or output stream to user client");
-		}
+		clientChannel = new TCPChannel(socket);
+//		try {
+//			out = new PrintWriter(socket.getOutputStream());
+//			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//		} catch (IOException e) {
+//			logger.error("Failed to bind input or output stream to user client");
+//		}
 
 		// communicate
 		String inputLine, outputLine;
@@ -85,12 +89,12 @@ public class ClientHandler implements Runnable {
 
 		try {
 			// read line and pass it to the CommunicationProtocoll
-			while ((inputLine = in.readLine()) != null) {
+			while ((inputLine = clientChannel.readLine()) != null) {
 				logger.debug("Receiving client command: "+inputLine);
 				outputLine = protocol.processInput(inputLine);
-				out.println(outputLine);
+				clientChannel.println(outputLine);
 				logger.debug("Sending client response: "+outputLine);
-				out.flush();
+				clientChannel.flush();
 			}
 		} catch (IOException e) {
 			// empty
@@ -139,15 +143,15 @@ public class ClientHandler implements Runnable {
 
 	public void shutdown() {
 		if (protocol.isOnline()) {
-			out.println("shutdownServer");
-			out.flush();
+			clientChannel.println("shutdownServer");
+			clientChannel.flush();
 		} else {
-			out.print("Sorry, the Server just went offline. "
+			clientChannel.print("Sorry, the Server just went offline. "
 					+ "For re- establishing the conneciton please contact the Server- crew and restart the Client!");
 		}
-		out.close();
+		//out.close();
 		try {
-			in.close();
+			clientChannel.close();
 			socket.close();
 			userManagement.getTimer().cancel();
 		} catch (IOException e) {

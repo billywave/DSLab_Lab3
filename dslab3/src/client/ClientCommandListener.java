@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import security.Channel;
 
 public class ClientCommandListener implements Runnable {
 
@@ -16,23 +17,25 @@ public class ClientCommandListener implements Runnable {
 	BufferedReader stdIn;
 	private static boolean exit = false;
 	Socket socket = null;
-	PrintWriter out = null;
+	//PrintWriter out = null;
+	private Channel serverChannel;
 	int udpPort = 0;
 
 	Client client;
 
-	public ClientCommandListener(Socket socket, int udpPort, Client client) {
-		this.socket = socket;
+	public ClientCommandListener(Channel serverChannel, int udpPort, Client client) {
+		//this.socket = socket;
 		//this.udpPort = udpPort;
 		this.client = client; // for shutting down
 		
-		try {
-			out = new PrintWriter(socket.getOutputStream());
-		} catch (IOException e) {
-			logger.error("Error: Failed to obtain server output stream!");
-		} catch (NullPointerException e) {
-			logger.error("Error: Failed to obtain server output stream!");
-		}
+		this.serverChannel = serverChannel;
+//		try {
+//			out = new PrintWriter(socket.getOutputStream());
+//		} catch (IOException e) {
+//			logger.error("Error: Failed to obtain server output stream!");
+//		} catch (NullPointerException e) {
+//			logger.error("Error: Failed to obtain server output stream!");
+//		}
 	}
 
 	@Override
@@ -131,8 +134,8 @@ public class ClientCommandListener implements Runnable {
 
 			}
 			logger.debug("sending TCP- message: " + userInput);
-			out.println(userInput);
-			out.flush();
+			serverChannel.println(userInput);
+			serverChannel.flush();
 		}
 		
 	}
