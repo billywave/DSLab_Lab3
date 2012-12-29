@@ -36,7 +36,7 @@ public class AuctionServer {
 		Main_AuctionServer.auctionServerExecutionService.execute(tcpSocket);
 		logger.debug("Server Socket thread started");
 		
-		CommandListener cmdListener = new CommandListener();
+		CommandListener cmdListener = new CommandListener(tcpSocket);
 		Main_AuctionServer.auctionServerExecutionService.execute(cmdListener);
 		logger.debug("CommandListener thread started");
 		
