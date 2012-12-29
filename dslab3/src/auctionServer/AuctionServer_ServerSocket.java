@@ -75,4 +75,25 @@ public class AuctionServer_ServerSocket implements Runnable {
 		}
 	}
 	
+	/**
+	 * close the Socket with letting everything else alive
+	 * to test the lab3- step4 (outage)
+	 */
+	public void closeSocket() {
+		AuctionServer_ServerSocket.listening = false;
+		logger.info("closing the (TCP-) ServerSocket but the Acution Server is alive");
+		
+		try {
+			myServerSocket.close();
+		} catch (IOException e) {
+			logger.error("couldn't close the ServerSocket");
+		}
+	}
+	
+	/**
+	 * open the serverSocket to test the lab3- stage4 (outage)
+	 */
+	public void openSocket() {
+		this.run();
+	}
 }
