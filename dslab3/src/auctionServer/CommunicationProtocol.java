@@ -170,6 +170,8 @@ public class CommunicationProtocol {
 					mClientHandler.processEvent(new UserEvent(UserEvent.USER_LOGOUT, timestamp, parameterPart));
 				} catch (RemoteException e) {
 					logger.error("Failed to connect to the Analytics Server");
+				} catch (NullPointerException e) {
+					//logger.error("Failed to connect to the Analytics Server");
 				} catch (WrongEventTypeException e) {
 					logger.error("Wrong type of Event");
 				}
@@ -222,6 +224,8 @@ public class CommunicationProtocol {
 				logger.error("Failed to connect to the Analytics Server");
 			} catch (WrongEventTypeException e) {
 				logger.error("Wrong type of Event");
+			} catch (NullPointerException e) {
+				
 			}
 			
 			String response = "An auction '" + auction.describtion + 

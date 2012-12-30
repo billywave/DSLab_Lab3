@@ -11,6 +11,7 @@ import loadTestingComponent.LoadTestClient;
 import org.apache.log4j.Logger;
 import security.Base64Channel;
 import security.Channel;
+import security.SecureChannel;
 import security.TCPChannel;
 
 /**
@@ -85,7 +86,7 @@ public class Client {
         //Main_Client.clientExecutionService.execute(udpSocket);
         try {
             socket = new Socket(host, tcpPort);
-			serverChannel = new Base64Channel(new TCPChannel(socket));
+			serverChannel = new SecureChannel(new Base64Channel(new TCPChannel(socket)));
             //in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	        } catch (UnknownHostException e) {
 	            System.err.println("Don't know about host: " + host + ".");

@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import rmi_Interfaces.MClientHandler_RO;
 import security.Base64Channel;
 import security.Channel;
+import security.SecureChannel;
 import security.TCPChannel;
 
 /**
@@ -69,7 +70,7 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		clientChannel = new Base64Channel(new TCPChannel(socket));
+		clientChannel = new SecureChannel(new Base64Channel(new TCPChannel(socket)));
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
 //			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -144,7 +145,7 @@ public class ClientHandler implements Runnable {
 			clientChannel.println("shutdownServer");
 			clientChannel.flush();
 		} else {
-			clientChannel.print("Sorry, the Server just went offline. "
+			clientChannel.println("Sorry, the Server just went offline. "
 					+ "For re- establishing the conneciton please contact the Server- crew and restart the Client!");
 		}
 		//out.close();

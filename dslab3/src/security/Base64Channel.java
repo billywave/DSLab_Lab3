@@ -31,11 +31,6 @@ public class Base64Channel implements Channel {
 	}
 
 	@Override
-	public void print(String line) {
-		channel.print(encode(line));
-	}
-
-	@Override
 	public void println(String line) {
 		channel.println(encode(line));
 	}
@@ -44,18 +39,26 @@ public class Base64Channel implements Channel {
 	 * Decodes a given line in Base64
 	 */
 	private String decode(String base64Line) {
-		byte[] base64ByteArray = base64Line.getBytes();
-		byte[] messageByteArray = Base64.decode(base64ByteArray);
-		return new String(messageByteArray);
+		if (base64Line == null) return null;
+		else if (base64Line.length() == 0) return "";
+		else {
+			byte[] base64ByteArray = base64Line.getBytes();
+			byte[] messageByteArray = Base64.decode(base64ByteArray);
+			return new String(messageByteArray);
+		}
 	}
 	
 	/*
 	 * Encodes a given line to Base64
 	 */
 	private String encode(String messageLine) {
-		byte[] messageByteArray = messageLine.getBytes();
-		byte[] base64ByteArray = Base64.encode(messageByteArray);
-		return new String(base64ByteArray);
+		if (messageLine == null) return null;
+		else if (messageLine.length() == 0) return "";
+		else {
+			byte[] messageByteArray = messageLine.getBytes();
+			byte[] base64ByteArray = Base64.encode(messageByteArray);
+			return new String(base64ByteArray);
+		}
 	}
 	
 	
