@@ -161,3 +161,8 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+#####################
+### Projekt- log4j
+#####################
+log4j.properties
