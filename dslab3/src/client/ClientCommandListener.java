@@ -3,11 +3,11 @@ package client;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+
 import security.Channel;
 
 public class ClientCommandListener implements Runnable {
@@ -140,6 +140,10 @@ public class ClientCommandListener implements Runnable {
 		
 	}
 
+	public void setServerChannel(Channel serverChannel) {
+		this.serverChannel = serverChannel;
+	}
+	
 	public static void shutdown() {
 		ClientCommandListener.exit = true;
 	}

@@ -1,18 +1,15 @@
 package client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
 import loadTestingComponent.LoadTestClient;
 
 import org.apache.log4j.Logger;
-import security.Base64Channel;
+
 import security.Channel;
 import security.SecureChannel;
-import security.TCPChannel;
 
 /**
  * This class represents the Client and is the first Object 
@@ -35,7 +32,7 @@ public class Client {
 	boolean ioNotFound = false;
 	boolean isTestingClient = false;
 	
-	Socket socket = null;
+	public Socket socket = null;
     //BufferedReader in = null;
 	Channel serverChannel;
     //UDPSocket udpSocket;
@@ -143,6 +140,34 @@ public class Client {
     			}
     		} catch (IOException e) {
     			// empty- just is thrown when ending client
+    		} catch (NullPointerException e) {
+    			logger.info("The Auctionserver just went offline.");
+    			
+    			boolean auctionServerIsOnline = false;
+    			
+    			while (!auctionServerIsOnline) {
+    				try {
+        				synchronized(this) {
+        					wait(1000);
+        					try {
+        						socket = new Socket(host, tcpPort);
+        						serverChannel = new SecureChannel(socket);
+        						auctionServerIsOnline = true;
+        						commandListener.setServerChannel(serverChannel);
+        						
+        						logger.info("The Aucitonserver just went online again.");
+        						listenToAuctionServer();
+        					} catch (UnknownHostException e1) {
+        						// do not display every try.
+        					} catch (IOException e1) {
+        						// do not display every try.
+        					}
+        				}
+        				
+        			} catch (InterruptedException e1) {
+        				logger.info("got interrupted");
+        			} 
+    			}
     		}
         }
 	}

@@ -3,7 +3,7 @@ package security;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.SecureRandom;
-import java.util.Arrays;
+
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -48,7 +48,7 @@ public class SecureChannel implements Channel {
 	}
 
 	@Override
-	public String readLine() throws IOException {
+	public String readLine() throws IOException, NullPointerException {
 		if (pendingList) {
 			pendingList = false;
 			return "!list";
