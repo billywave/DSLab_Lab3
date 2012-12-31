@@ -70,7 +70,11 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		clientChannel = new SecureChannel(socket);
+		
+		SecureChannel secureChannel = new SecureChannel(socket);
+		secureChannel.setUser("auction-server", "23456"); //TODO change this to input on system.in
+		clientChannel = secureChannel;
+		
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
 //			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));

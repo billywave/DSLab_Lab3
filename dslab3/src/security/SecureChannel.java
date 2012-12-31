@@ -1,9 +1,11 @@
 package security;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.security.SecureRandom;
-
+import java.util.Arrays;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -32,9 +34,9 @@ public class SecureChannel implements Channel {
 
 	public SecureChannel(Socket socket) {
 		this.socket = socket;
-		Channel tempChannel = new Base64Channel(new TCPChannel(socket));
-		this.rsaChannel = new RSAChannel(tempChannel);
-		this.aesChannel = new AESChannel(tempChannel);
+		Base64Channel base64Channel = new Base64Channel(new TCPChannel(socket));
+		this.rsaChannel = new RSAChannel(base64Channel);
+		this.aesChannel = new AESChannel(base64Channel);
 		this.channel = rsaChannel;
 		
 		// generates a 32 byte secure random number
@@ -46,9 +48,26 @@ public class SecureChannel implements Channel {
 		
 		
 	}
+	
+	/**
+	 * Sets a specified user for decryption and encryption (for loading keys mainly)
+	 * @param user 
+	 * @param rsasPrivateKeyPassword
+	 */
+	public boolean setUser(String user, String rsaPrivateKeyPassword) {
+		return this.rsaChannel.loadUserKeys(user, rsaPrivateKeyPassword);
+	}
+	
+	/**
+	 * Sets the remote user name, to use his public rsa key for encryption
+	 * @param user 
+	 */
+	public boolean setRemoteUser(String user) {
+		return this.rsaChannel.loadRemoteUserPublicKey(user);
+	}
 
 	@Override
-	public String readLine() throws IOException, NullPointerException {
+	public String readLine() throws IOException {
 		if (pendingList) {
 			pendingList = false;
 			return "!list";
@@ -58,19 +77,22 @@ public class SecureChannel implements Channel {
 		do {
 		line = channel.readLine();
 		logger.debug("Receiving Message: " + line);
-		
+		if (line == null) return null;
 		String[] splitLine = line.split(" ");
 		// receiving message #1 - happens on server side
 		if (this.waitingForMessage == 1 && splitLine[0].equals("!login") && splitLine.length >= 4) {
 			loginMessage = line;
 			loginName = splitLine[1];
+			boolean remoteUserFound = setRemoteUser(loginName);
 			remoteChallenge = splitLine[3];
 			logger.debug("Remote client authentication challenge in base64: " + remoteChallenge);
 			this.waitingForMessage = 3;
 			String returnMessage = "!ok " + remoteChallenge + " " + localChallenge + " abcde edcba";
-			channel.println(returnMessage);
-			channel.flush();
-			logger.debug("Sending Login Message #2: " + returnMessage);
+			if (remoteUserFound) {
+				channel.println(returnMessage);
+				channel.flush();
+				logger.debug("Sending Login Message #2: " + returnMessage);
+			} else logger.error("Remote user unknown");
 		}
 		
 		// receiving message #2 - happens on client side
@@ -84,10 +106,11 @@ public class SecureChannel implements Channel {
 				useAESChannel();
 				waitingForMessage = 0;
 				authorized = true;
-				return channel.readLine();
+				if (!loginName.equals(systemName)) System.out.println(loginName + " has been successfully authorized");
+				return this.readLine();
 			} else {
 				logger.error("Responded challenge from server: " + splitLine[1] + " doesn't match client challenge: " + localChallenge);
-				return channel.readLine();
+				return this.readLine();
 			}
 		}
 		
@@ -130,24 +153,43 @@ public class SecureChannel implements Channel {
 		String[] splitLine = line.split(" ");
 		if (splitLine.length >= 1) {
 			// on client side
-			if (splitLine[0].equals("!login")) {
+			if (splitLine.length >= 2 && splitLine[0].equals("!login") && !authorized) {
 				line = line + " " + localChallenge;
 				this.waitingForMessage = 2;
-				logger.debug("Sending Login message #1: " + line);
+				loginName = splitLine[1];
+				setRemoteUser("auction-server");
+				System.out.println("Enter pass phrase for RSA Private key:");
+				try {
+					String password = (new BufferedReader(new InputStreamReader(System.in)).readLine());
+					boolean userFound = setUser(loginName, password);
+					if (userFound) {
+						logger.debug("Sending Login message #1: " + line);
+						channel.println(line);
+						channel.flush();
+					}
+				} catch (IOException ex) {
+					//logger.error("One");
+					ex.printStackTrace();
+				}
+				
 			} else if (splitLine[0].equals("!list") && !authorized) {
+				setUser(systemName, "list");
 				channel.println("!login " + systemName + " " + socket.getLocalPort() + " " + localChallenge);
 				channel.flush();
 				this.waitingForMessage = 2;
-				return;
+				//return;
 			} else if (splitLine[0].equals("!logout")) {
 				authorized = false;
 				channel = rsaChannel;
 				waitingForMessage = 1;
+				channel.println(line);
+				channel.flush();
 			}
 		}
-		
-		channel.println(line);
-		channel.flush();
+		if (authorized) {
+			channel.println(line);
+			channel.flush();
+		}
 	}
 	
 	private void useAESChannel() {

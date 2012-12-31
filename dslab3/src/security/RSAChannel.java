@@ -1,21 +1,96 @@
 package security;
 
-import java.io.IOException;
+import java.io.*;
+import java.security.*;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.EncryptionException;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder; 
 
-/**
- *
- * @author Bernhard
- */
 public class RSAChannel implements Channel {
-	private final Channel channel;
-
-	public RSAChannel(Channel channel) {
+	private Logger logger = Logger.getLogger(this.getClass());
+	
+	private final Base64Channel channel;
+	
+	private String user;
+	
+	private Cipher cipher;
+	private PrivateKey privateKey;
+	private PublicKey publicKey;
+	private PublicKey remotePublicKey;
+	
+	public RSAChannel(Base64Channel channel) {
 		this.channel = channel;
+		
+		// Initializing cipher for RSA
+		try {
+			cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding");
+		} catch (NoSuchAlgorithmException ex) {
+			ex.printStackTrace();
+		} catch (NoSuchPaddingException ex) {
+			ex.printStackTrace();
+		}
 	}
+	
+	/**
+	 * Loads the rsa key to the given user and stores them as the members
+	 * @param user 
+	 */
+	public boolean loadUserKeys(String user, String password) {
+		this.user = user;
+		privateKey = readPrivateKey(user,password);
+		publicKey = readPublicKey(user);
+		return (privateKey != null & publicKey != null);
+	}
+	
+	public boolean loadRemoteUserPublicKey(String user) {
+		remotePublicKey = readPublicKey(user);
+		return (remotePublicKey != null);
+	}
+	
+	private byte[] encrypt(String message) {
+		byte[] encryptedMessage = null;
+		try {
+			cipher.init(Cipher.ENCRYPT_MODE, remotePublicKey);
+			try {
+				encryptedMessage = cipher.doFinal(message.getBytes());
+			} catch (IllegalBlockSizeException ex) {
+				ex.printStackTrace();
+			} catch (BadPaddingException ex) {
+				ex.printStackTrace();
+			}
+		} catch (InvalidKeyException ex) {
+			ex.printStackTrace();
+		}
+		return encryptedMessage;
+	}
+	
+	private String decrypt(byte[] message) {
+		String decryptedMessage = null;
+		try {
+			cipher.init(Cipher.DECRYPT_MODE, privateKey);
+			try {
+				decryptedMessage = new String(cipher.doFinal(message));
+			} catch (IllegalBlockSizeException ex) {
+				ex.printStackTrace();
+			} catch (BadPaddingException ex) {
+				ex.printStackTrace();
+			}
+		} catch (InvalidKeyException ex) {
+			logger.error("RSA key didn't match");
+		}
+		return decryptedMessage;
+	}
+	
 
 	@Override
 	public String readLine() throws IOException {
-		return channel.readLine();
+		return decrypt(channel.readBytes());
 	}
 
 	@Override
@@ -30,7 +105,51 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public void println(String line) {
-		channel.println(line);
+		channel.printBytes(encrypt(line));
 	}
+	
+	/**
+	 * Reads the private key of the given user
+	 */
+	private PrivateKey readPrivateKey(final String user, final String password) {
+		try {
+			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pem"), new PasswordFinder() {
+				@Override
+				public char[] getPassword() {
+					return password.toCharArray();
+				}
+			});
+			
+			KeyPair keyPair = (KeyPair) in.readObject();
+			return keyPair.getPrivate(); 
+			
+		} catch (FileNotFoundException e) {
+			logger.error("Private Key File Not Found");
+			// TODO fill in
+		} catch (EncryptionException e) {
+			logger.error("Decryption failed, check password");
+		} catch (IOException ex) {
+			logger.error("Two");
+			ex.printStackTrace();
+		}
+		return null;
+	}
+	
+	/**
+	 * Reads the public key of a given user
+	 * @param user 
+	 */
+	private PublicKey readPublicKey(String user) {
+		try {
+			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pub.pem"));
+			return (PublicKey) in.readObject();
+		} catch (FileNotFoundException e) {
+			logger.error("Public Key File Not Found");
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
 	
 }
