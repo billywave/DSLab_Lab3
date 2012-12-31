@@ -70,7 +70,7 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		clientChannel = new SecureChannel(new Base64Channel(new TCPChannel(socket)));
+		clientChannel = new SecureChannel(socket);
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
 //			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
