@@ -50,8 +50,4 @@ public class TCPChannel implements Channel{
 		}
 	}
 
-	@Override
-	public void print(String line) {
-		out.print(line);
-	}
 }

@@ -160,4 +160,18 @@ public class ClientHandler implements Runnable {
 		}
 		protocol.shutdown();
 	}
+	
+	/**
+	 * close just the socket and the clientChannel to test server outage
+	 */
+	public void closeChannel() {
+		try {
+			clientChannel.close();
+			socket.close();
+		} catch (IOException e) {
+		System.out.println("Error: shutting down the ClientHandler failed!");
+		} catch (NullPointerException e) {
+			// timer was not instancated
+		}
+	}
 }

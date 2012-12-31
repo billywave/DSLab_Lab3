@@ -56,13 +56,13 @@ public class CommandListener implements Runnable {
 				
 				// close the TCP- ServerSocket to test the server outage function (lab3- stage4)
 				if (userInput.equals("!close")) {
-					System.out.println("closing socket");
 					auctionServer_ServerSocket.closeSocket();
 				}
 				
 				// open the TCP- ServerSocket again to test the server outage function
 				if (userInput.equals("!open")) {
 					auctionServer_ServerSocket.openSocket();
+					Main_AuctionServer.auctionServerExecutionService.execute(auctionServer_ServerSocket);
 				}
 			}
 		} catch (IOException e) {

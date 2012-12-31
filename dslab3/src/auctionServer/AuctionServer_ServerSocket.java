@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.log4j.Logger;
 
 public class AuctionServer_ServerSocket implements Runnable {
@@ -42,7 +43,7 @@ public class AuctionServer_ServerSocket implements Runnable {
 		try {
 			myServerSocket = new ServerSocket(tcpPort);
 		} catch (IOException e) {
-			logger.error("Connection to Port " + tcpPort + "can not be established");
+			logger.error("Connection to Port " + tcpPort + " can not be established");
 		}
 		
 		logger.info("Server TCP Socket listening");
@@ -54,7 +55,7 @@ public class AuctionServer_ServerSocket implements Runnable {
 				Main_AuctionServer.auctionServerExecutionService.execute(clientHandler);
 				logger.debug("Client Handler thread started");
 			} catch (IOException e) {
-				// empty on purporse
+				// empty on purpose
 			}
 		}
 	}
@@ -83,6 +84,11 @@ public class AuctionServer_ServerSocket implements Runnable {
 		AuctionServer_ServerSocket.listening = false;
 		logger.info("closing the (TCP-) ServerSocket but the Acution Server is alive");
 		
+		Iterator<ClientHandler> listIterator = clientHandlers.iterator();
+		while (listIterator.hasNext()) {
+			listIterator.next().closeChannel();
+		}
+		
 		try {
 			myServerSocket.close();
 		} catch (IOException e) {
@@ -94,6 +100,7 @@ public class AuctionServer_ServerSocket implements Runnable {
 	 * open the serverSocket to test the lab3- stage4 (outage)
 	 */
 	public void openSocket() {
-		this.run();
+		logger.info("opening the ServerSocket");
+		AuctionServer_ServerSocket.listening = true;
 	}
 }
