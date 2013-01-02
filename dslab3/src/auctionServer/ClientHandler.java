@@ -1,7 +1,5 @@
 package auctionServer;
 
-import event.UserEvent;
-import exceptions.WrongEventTypeException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -11,9 +9,14 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
+
 import org.apache.log4j.Logger;
+
 import rmi_Interfaces.MClientHandler_RO;
-import security.*;
+import security.Channel;
+import security.SecureChannel;
+import event.UserEvent;
+import exceptions.WrongEventTypeException;
 
 /**
  * Has the TCP connection to a cirtain client. for the requests comming over the
@@ -68,7 +71,9 @@ public class ClientHandler implements Runnable {
 	@Override
 	public void run() {
 		
-		clientChannel = new SecureServerChannel(socket);
+		SecureChannel secureChannel = new SecureChannel(socket);
+		secureChannel.setUser("auction-server", "23456"); //TODO change this to input on system.in
+		clientChannel = secureChannel;
 		
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
@@ -86,10 +91,10 @@ public class ClientHandler implements Runnable {
 		try {
 			// read line and pass it to the CommunicationProtocoll
 			while ((inputLine = clientChannel.readLine()) != null) {
+				logger.debug("Receiving client command: "+inputLine);
 				outputLine = protocol.processInput(inputLine);
-				logger.debug("CH: Receiving client command: "+inputLine);
-				logger.debug("CH: Sending client response: "+outputLine);
 				clientChannel.println(outputLine);
+				logger.debug("Sending client response: "+outputLine);
 				clientChannel.flush();
 			}
 		} catch (NullPointerException e) {
