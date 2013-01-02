@@ -13,10 +13,7 @@ import java.rmi.registry.Registry;
 import java.sql.Timestamp;
 import org.apache.log4j.Logger;
 import rmi_Interfaces.MClientHandler_RO;
-import security.Base64Channel;
-import security.Channel;
-import security.SecureChannel;
-import security.TCPChannel;
+import security.*;
 
 /**
  * Has the TCP connection to a cirtain client. for the requests comming over the
@@ -71,9 +68,7 @@ public class ClientHandler implements Runnable {
 	@Override
 	public void run() {
 		
-		SecureChannel secureChannel = new SecureChannel(socket);
-		secureChannel.setUser("auction-server", "23456"); //TODO change this to input on system.in
-		clientChannel = secureChannel;
+		clientChannel = new SecureServerChannel(socket);
 		
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
@@ -91,10 +86,10 @@ public class ClientHandler implements Runnable {
 		try {
 			// read line and pass it to the CommunicationProtocoll
 			while ((inputLine = clientChannel.readLine()) != null) {
-				logger.debug("Receiving client command: "+inputLine);
 				outputLine = protocol.processInput(inputLine);
+				logger.debug("CH: Receiving client command: "+inputLine);
+				logger.debug("CH: Sending client response: "+outputLine);
 				clientChannel.println(outputLine);
-				logger.debug("Sending client response: "+outputLine);
 				clientChannel.flush();
 			}
 		} catch (NullPointerException e) {

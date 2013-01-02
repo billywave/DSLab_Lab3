@@ -13,7 +13,7 @@ import org.bouncycastle.util.encoders.Base64;
  *
  * @author Bernhard
  */
-public class SecureChannel implements Channel {
+public class SecureClientChannel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
 	
 	private Channel channel;
@@ -24,22 +24,22 @@ public class SecureChannel implements Channel {
 	private String localChallenge;
 	private String remoteChallenge;
 	
-	private String loginMessage;
-	private int waitingForMessage;
-	
+//	private String loginMessage;
+//	private int waitingForMessage;
+//	
 	private final String systemName = "system";
 	private String loginName;
 	private boolean authorized;
-	private boolean pendingList;
-	private boolean readingAllowed = false;
+//	private boolean pendingList;
+//	private boolean readingAllowed = false;
 
-	public SecureChannel(Socket socket) {
+	public SecureClientChannel(Socket socket) {
 		this.socket = socket;
-		
+//		
 		authorized = false;
-		//pendingList = false;
-		loginMessage = "";
-		waitingForMessage = 1;
+//		//pendingList = false;
+//		loginMessage = "";
+//		waitingForMessage = 1;
 		loginName = "";
 		
 		Base64Channel base64Channel = new Base64Channel(new TCPChannel(socket));
@@ -61,10 +61,10 @@ public class SecureChannel implements Channel {
 	 * Sets the channel back to handle logins
 	 * @param mode "aes" or "rsa"
 	 */
-	private void reset() {
-		
-	}
-	
+//	private void reset() {
+//		
+//	}
+//	
 	/**
 	 * Sets a specified user for decryption and encryption (for loading keys mainly)
 	 * @param user 
@@ -84,36 +84,16 @@ public class SecureChannel implements Channel {
 
 	@Override
 	public String readLine() throws IOException {
-		if (pendingList) {
-			pendingList = false;
-			aesChannel.appendToInputStream("!logout");
-			return "!list";
-		}
 		
 		String line = "";
-		do {
+//		do {
 		line = channel.readLine();
-		logger.debug("Receiving Message: " + line);
+		logger.debug("SCC: Receiving Message: " + line);
 		if (line == null) throw new NullPointerException();
 		String[] splitLine = line.split(" ");
-		// receiving message #1 - happens on server side
-		if (splitLine[0].equals("!login") && splitLine.length >= 4) {
-			loginMessage = line;
-			loginName = splitLine[1];
-			boolean remoteUserFound = setRemoteUser(loginName);
-			remoteChallenge = splitLine[3];
-			logger.debug("Remote client authentication challenge in base64: " + remoteChallenge);
-			String returnMessage = "!ok " + remoteChallenge + " " + localChallenge + " abcde edcba";
-			if (remoteUserFound) {
-				this.waitingForMessage = 3;
-				channel.println(returnMessage);
-				channel.flush();
-				logger.debug("Sending Login Message #2: " + returnMessage);
-			} else logger.error("Remote user unknown");
-		}
 		
-		// receiving message #2 - happens on client side
-		else if (this.waitingForMessage == 2 && splitLine[0].equals("!ok")  && splitLine.length >= 5) {
+		// receiving message #2
+		if (!authorized && splitLine[0].equals("!ok")  && splitLine.length >= 5) {
 			// Check if message from server contains local challenge
 			if (splitLine[1].equals(localChallenge)) {
 				this.remoteChallenge = splitLine[2];
@@ -121,7 +101,7 @@ public class SecureChannel implements Channel {
 				channel.flush();
 				logger.debug("Sending Login Message #3: " + remoteChallenge);
 				useAESChannel();
-				waitingForMessage = 0;
+//				waitingForMessage = 0;
 				authorized = true;
 				if (!loginName.equals(systemName)) System.out.println(loginName + " has been successfully authorized");
 				return this.readLine();
@@ -130,77 +110,43 @@ public class SecureChannel implements Channel {
 				return this.readLine();
 			}
 		}
-		
-		// receiving message #3 - happens on server side
-		else if (waitingForMessage == 3) {
-			if (splitLine[0].equals(localChallenge)) {
-				authorized = true;
-				useAESChannel();
-				waitingForMessage = 0;
-				if (loginName.equals(systemName)) {
-					//pendingList = true;
-					//aesChannel.appendToInputStream("!logout");
-					aesChannel.appendToInputStream("!list");
-					readingAllowed = false;
-				} else readingAllowed = true;
-				return loginMessage;
-			} else {
-				logger.error("Responded challenge from client: " + splitLine[0] + " doesn't match server challenge: " + localChallenge);
-			}
-		} 
-		
-		// logout on server side
-		else if (splitLine.length >= 1 && splitLine[0].equals("!logout")) {
-//			channel = rsaChannel;
-//			logger.debug("Changing channel encryption to RSA");
-//			authorized = false;
-//			waitingForMessage = 1;
-			authorized = false;
-			//pendingList = false;
-			loginMessage = "";
-			waitingForMessage = 1;
-			//loginName = "";
-			this.channel = rsaChannel;
-			aesChannel.println("Changing server channel to RSA");
-			aesChannel.flush();
-			return line;
-		}
-		
-		} while (waitingForMessage != 0);
+//		
+//		} while (!authorized);
 		logger.debug("Returning message: " + line);
-		if (!(line.equals("!list") || line.equals("!logout")) && !readingAllowed) return "System not authorized";
+//		if (!(line.equals("!list") || line.equals("!logout")) && !readingAllowed) return "System not authorized";
 		return line;
 		
 	}
 
 	@Override
 	public void close() {
-		channel.close();
+//		channel.close();
 	}
 
 	@Override
 	public void flush() {
-		channel.flush();
+//		channel.flush();
 	}
 
 	@Override
 	public void println(String line) {
 		String[] splitLine = line.split(" ");
-		//if (splitLine.length >= 1) {
-			// on client side
+//		//if (splitLine.length >= 1) {
+//			// on client side
 			if (splitLine.length >= 2 && splitLine[0].equals("!login")) {
 				if (!authorized) {
 				channel = rsaChannel;
-				readingAllowed = true;
+//				readingAllowed = true;
 				line = line + " " + localChallenge;
 				loginName = splitLine[1];
 				setRemoteUser("auction-server");
+				
 				System.out.println("Enter pass phrase for RSA Private key:");
 				try {
 					String password = (new BufferedReader(new InputStreamReader(System.in)).readLine());
 					boolean userFound = setUser(loginName, password);
 					if (userFound) {
-						this.waitingForMessage = 2;
+//						this.waitingForMessage = 2;
 						logger.debug("Sending Login message #1: " + line);
 						channel.println(line);
 						channel.flush();
@@ -209,36 +155,39 @@ public class SecureChannel implements Channel {
 					//logger.error("One");
 					ex.printStackTrace();
 				}
+				
 				} else System.out.println("Please log out first, you are currently logged in as: " + loginName);
 			} else if (splitLine.length >= 1 && splitLine[0].equals("!list") && !authorized) {
 				boolean userFound = setUser(systemName, "12345");
 				setRemoteUser("auction-server");
-				readingAllowed = true;
+//				readingAllowed = true;
 				loginName = systemName;
 				if (userFound) {
 				channel.println("!login " + systemName + " " + socket.getLocalPort() + " " + localChallenge);
 				channel.flush();
-				this.waitingForMessage = 2;
-				//return;
+//				this.waitingForMessage = 2;
+//				return;
 				}
 				//return;
 			} else if (splitLine.length >= 1 && splitLine[0].equals("!logout")) {
-//				authorized = false;
+				authorized = false;
 				channel = rsaChannel;
-//				waitingForMessage = 1;
+////				waitingForMessage = 1;
 				aesChannel.println(line);
 				aesChannel.flush();
-				//aesChannel.appendToInputStream("Chaning channel back to RSA");
-				//throw new NullPointerException();
-				authorized = false;
-				pendingList = false;
-				loginMessage = "";
-				waitingForMessage = 0;
-				//loginName = "";
-				//channel = rsaChannel;
+//				//aesChannel.appendToInputStream("Chaning channel back to RSA");
+//				//throw new NullPointerException();
+//				authorized = false;
+//				pendingList = false;
+//				loginMessage = "";
+//				waitingForMessage = 0;
+				loginName = "";
+//				//channel = rsaChannel;
 				//return;
 			} else {
-		
+//		
+				
+		// needs to be authorized or RSA key wouldn't match
 		if (authorized) {
 			logger.debug("Secure: Sending client response: " + line);
 			channel.println(line);

@@ -66,7 +66,8 @@ public class RSAChannel implements Channel {
 				ex.printStackTrace();
 			}
 		} catch (InvalidKeyException ex) {
-			ex.printStackTrace();
+			//ex.printStackTrace();
+			logger.error("RSA Encryption: Key didn't match");
 		}
 		return encryptedMessage;
 	}
@@ -84,7 +85,7 @@ public class RSAChannel implements Channel {
 				ex.printStackTrace();
 			}
 		} catch (InvalidKeyException ex) {
-			logger.error("RSA key didn't match");
+			logger.error("RSA decryption: Key didn't match");
 		}
 		return decryptedMessage;
 	}
@@ -98,6 +99,7 @@ public class RSAChannel implements Channel {
 			return null;
 			
 		}
+		logger.debug("Next message received via RSA");
 		return decrypt(line);
 	}
 
@@ -113,6 +115,7 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public void println(String line) {
+		logger.debug("Previouse message sent via RSA");
 		channel.printBytes(encrypt(line));
 	}
 	
@@ -159,9 +162,8 @@ public class RSAChannel implements Channel {
 		return null;
 	}
 
-	@Override
 	public void appendToInputStream(String line) {
-		channel.appendToInputStream(line);
+		channel.appendToInputStream(encrypt(line));
 	}
 
 	

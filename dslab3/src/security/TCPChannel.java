@@ -55,6 +55,11 @@ public class TCPChannel implements Channel{
 		}
 	}
 
+	/**
+	 * Appends a new line to an input stream stack
+	 * which will be returned on the next call of readLine()
+	 * @param line 
+	 */
 	@Override
 	public void appendToInputStream(String line) {
 		lineBuffer.push(line);

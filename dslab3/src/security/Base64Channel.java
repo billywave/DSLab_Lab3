@@ -12,9 +12,9 @@ import org.bouncycastle.util.encoders.Base64;
 public class Base64Channel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
 	
-	private final Channel channel;
+	private final TCPChannel channel;
 
-	public Base64Channel(Channel channel) {
+	public Base64Channel(TCPChannel channel) {
 		this.channel = channel;
 	}
 
@@ -82,7 +82,11 @@ public class Base64Channel implements Channel {
 
 	@Override
 	public void appendToInputStream(String line) {
-		channel.appendToInputStream(line);
+		channel.appendToInputStream(encode(line.getBytes()));
+	}
+	
+	public void appendToInputStream(byte[] line) {
+		channel.appendToInputStream(encode(line));
 	}
 	
 	

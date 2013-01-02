@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import security.Channel;
 import security.SecureChannel;
+import security.SecureClientChannel;
 
 /**
  * This class represents the Client and is the first Object 
@@ -83,7 +84,7 @@ public class Client {
         //Main_Client.clientExecutionService.execute(udpSocket);
         try {
             socket = new Socket(host, tcpPort);
-			serverChannel = new SecureChannel(socket);
+			serverChannel = new SecureClientChannel(socket);
             //in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	        } catch (UnknownHostException e) {
 	            System.err.println("Don't know about host: " + host + ".");
