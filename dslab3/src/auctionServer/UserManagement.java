@@ -86,12 +86,14 @@ public class UserManagement {
 	}
 	
 	public void loggoutAll() {
+		logger.debug("loggout all");
 		synchronized (syncUserList) {
 			Iterator<User> iterator = syncUserList.iterator();
 			
 			while (iterator.hasNext()) {
 				User user = iterator.next();
 				user.setOnline(false);
+				logger.debug("logout user " + user.getName());
 			}
 			
 		}
@@ -251,9 +253,11 @@ public class UserManagement {
 		User user = null;
 		while (iterator.hasNext()) {
 			user = iterator.next();
-			users += user.getInternetAdress() + ":" + user.getPort() + " - " + user.getName() + "\n";
+			if (user.isOnline()) {
+				users += user.getInternetAdress().toString().substring(1) + ":" + user.getPort() + " - " + user.getName() + "\n";
+			}
 		}
-		return users.substring(1, users.length()-1);
+		return users;
 	}
 	
 	public Timer getTimer() {

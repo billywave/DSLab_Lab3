@@ -56,6 +56,7 @@ public class CommandListener implements Runnable {
 				
 				// close the TCP- ServerSocket to test the server outage function (lab3- stage4)
 				if (userInput.equals("!close")) {
+					auctionServer_ServerSocket.userManagement.loggoutAll();
 					auctionServer_ServerSocket.closeSocket();
 				}
 				

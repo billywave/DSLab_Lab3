@@ -3,6 +3,7 @@ package client;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 
 import loadTestingComponent.LoadTestClient;
 
@@ -29,6 +30,8 @@ public class Client {
 	String host;
 	int tcpPort;
 	int udpPort;
+	
+	HashMap<String, Integer> onlineUsers;
 	
 	boolean ioNotFound = false;
 	boolean isTestingClient = false;
@@ -123,6 +126,28 @@ public class Client {
     	    			shutdown();
     	    			ClientCommandListener.shutdown();
     	    		}
+    	    		else if (incommingMessage.startsWith("firstusers: ")) {
+    	    			logger.debug("--------------------FIRST LIST-----------------------");
+    	    			String[] userArray = incommingMessage.substring(11).split("\n");
+    	    			for (int i = 0; i < userArray.length; i++) {
+    	    				logger.debug("workinging with: " + userArray[i]);
+    	    				String[] ip_portArray = userArray[i].split(":");
+    	    				if (ip_portArray.length > 2) {
+    	    					logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
+    	    					onlineUsers.put(ip_portArray[0], Integer.parseInt(ip_portArray[1]));
+    	    				}
+    	    			}
+    	    		}
+    	    		else if (incommingMessage.startsWith("users: ")) {
+    	    			String[] userArray = incommingMessage.substring(7).split("\n");
+    	    			for (int i = 0; i < userArray.length; i++) {
+    	    				String[] ip_portArray = userArray[i].split(":");
+    	    				if (ip_portArray.length > 2) {
+    	    					onlineUsers.put(ip_portArray[0], Integer.parseInt(ip_portArray[1]));
+    	    				}
+    	    			}
+    	    			System.out.println(incommingMessage.substring(7));
+    	    		}
     	    		else {
     	    			// if testing- dont print out, else print out
     	    			if (this.isTestingClient && loadTestClient != null) {
@@ -142,7 +167,7 @@ public class Client {
     		} catch (IOException e) {
     			// empty- just is thrown when ending client
     		} catch (NullPointerException e) {
-    			logger.info("The Auctionserver just went offline.");
+    			logger.info("The Auctionserver just went offline. You have been logged out automatically.");
     			
     			boolean auctionServerIsOnline = false;
     			
@@ -155,8 +180,7 @@ public class Client {
         						serverChannel = new SecureChannel(socket);
         						auctionServerIsOnline = true;
         						commandListener.setServerChannel(serverChannel);
-        						
-        						logger.info("The Aucitonserver just went online again.");
+        						logger.info("The Aucitonserver just went online again. Please log in again!");
         						listenToAuctionServer();
         					} catch (UnknownHostException e1) {
         						// do not display every try.

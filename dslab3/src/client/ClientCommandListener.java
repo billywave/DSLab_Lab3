@@ -136,6 +136,10 @@ public class ClientCommandListener implements Runnable {
 			logger.debug("sending TCP- message: " + userInput);
 			serverChannel.println(userInput);
 			serverChannel.flush();
+			
+			// obtain list of other users
+			serverChannel.println("!getFirstClientList");
+			serverChannel.flush();
 		}
 		
 	}

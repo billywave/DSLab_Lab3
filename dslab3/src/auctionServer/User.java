@@ -7,8 +7,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 public class User {
 
+	private Logger logger = Logger.getLogger(User.class);
+	
 	private String name = "";
 	private boolean online = false;
 	private InetAddress inetAdress;
@@ -71,6 +75,7 @@ public class User {
 		return online;
 	}
 	public synchronized void setOnline(boolean online) {
+		logger.debug("userIsOnline was set " + online);
 		this.online = online;
 	}
 	public InetAddress getInternetAdress() {

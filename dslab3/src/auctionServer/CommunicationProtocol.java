@@ -113,6 +113,10 @@ public class CommunicationProtocol {
 		if (cmdPart.equals("!getClientList")) {
 			return getClientList();
 		}
+		if (cmdPart.equals("!getFirstClientList")) {
+			logger.debug("!getFirstClientList - command set");
+			return getFirstClientList();
+		}
 		return "Error: Unknown command: " + input;
 	}
 	
@@ -294,7 +298,13 @@ public class CommunicationProtocol {
 	 * @return
 	 */
 	private String getClientList() {
-		return userManagement.getAllUsers();
+		return "users: " + userManagement.getAllUsers();
+	}
+	
+	private String getFirstClientList() {
+		String allUsers = "firstusers: " + userManagement.getAllUsers();
+		logger.debug("sending: " + allUsers);
+		return allUsers;
 	}
 	
 	public boolean isOnline() {
