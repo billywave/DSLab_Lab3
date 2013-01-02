@@ -32,5 +32,10 @@ public class AESChannel implements Channel {
 	public void println(String line) {
 		channel.println(line);
 	}
+
+	@Override
+	public void appendToInputStream(String line) {
+		channel.appendToInputStream(line);
+	}
 	
 }

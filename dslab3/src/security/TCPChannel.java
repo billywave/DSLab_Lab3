@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Stack;
 import org.apache.log4j.Logger;
 
 /**
@@ -12,10 +13,13 @@ import org.apache.log4j.Logger;
  * @author Bernhard
  */
 public class TCPChannel implements Channel{
+	private Logger logger = Logger.getLogger(this.getClass());
+	
 	private PrintWriter out = null;
 	private BufferedReader in = null;
 	
-	private Logger logger = Logger.getLogger(this.getClass());
+	private Stack<String> lineBuffer = new Stack<String>();
+	
 	public TCPChannel(Socket socket) {
 		try {
 			out = new PrintWriter(socket.getOutputStream());
@@ -27,6 +31,7 @@ public class TCPChannel implements Channel{
 
 	@Override
 	public String readLine() throws IOException {
+		if (!lineBuffer.empty()) return lineBuffer.pop();
 		return in.readLine();
 	}
 
@@ -48,6 +53,11 @@ public class TCPChannel implements Channel{
 		} catch (IOException ex) {
 			//ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public void appendToInputStream(String line) {
+		lineBuffer.push(line);
 	}
 
 }

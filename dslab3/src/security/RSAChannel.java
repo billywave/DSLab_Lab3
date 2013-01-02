@@ -54,6 +54,7 @@ public class RSAChannel implements Channel {
 	}
 	
 	private byte[] encrypt(String message) {
+		if (message == null) return null;
 		byte[] encryptedMessage = null;
 		try {
 			cipher.init(Cipher.ENCRYPT_MODE, remotePublicKey);
@@ -71,6 +72,7 @@ public class RSAChannel implements Channel {
 	}
 	
 	private String decrypt(byte[] message) {
+		if (message == null) return null;
 		String decryptedMessage = null;
 		try {
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -90,7 +92,13 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public String readLine() throws IOException {
-		return decrypt(channel.readBytes());
+		byte[] line = channel.readBytes();
+		if (line == null) {
+			logger.debug("Happens in readLine from RSAChannel");
+			return null;
+			
+		}
+		return decrypt(line);
 	}
 
 	@Override
@@ -149,6 +157,11 @@ public class RSAChannel implements Channel {
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public void appendToInputStream(String line) {
+		channel.appendToInputStream(line);
 	}
 
 	

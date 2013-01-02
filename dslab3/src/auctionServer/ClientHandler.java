@@ -97,6 +97,8 @@ public class ClientHandler implements Runnable {
 				logger.debug("Sending client response: "+outputLine);
 				clientChannel.flush();
 			}
+		} catch (NullPointerException e) {
+			
 		} catch (IOException e) {
 			// empty
 		}
