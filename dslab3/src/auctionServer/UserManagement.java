@@ -240,6 +240,22 @@ public class UserManagement {
 		return amountString;
 	}
 	
+	/**
+	 * @return a List of All users in the following format:
+	 * ip:port - Name
+	 */
+	public String getAllUsers() {
+		String users = "";
+		
+		Iterator<User> iterator = syncUserList.iterator();
+		User user = null;
+		while (iterator.hasNext()) {
+			user = iterator.next();
+			users += user.getInternetAdress() + ":" + user.getPort() + " - " + user.getName() + "\n";
+		}
+		return users.substring(1, users.length()-1);
+	}
+	
 	public Timer getTimer() {
 		return timer;
 	}

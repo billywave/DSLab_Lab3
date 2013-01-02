@@ -110,9 +110,13 @@ public class CommunicationProtocol {
 		if (cmdPart.equals("!bid")) {
 			return bidForAuction();
 		}
+		if (cmdPart.equals("!getClientList")) {
+			return getClientList();
+		}
 		return "Error: Unknown command: " + input;
 	}
 	
+
 	/**
 	 * call the UserManagements method to logg user in. 
 	 * 
@@ -282,6 +286,15 @@ public class CommunicationProtocol {
 			return userManagement.bidForAuction(user, auctionID, amount);
 		}
 		return "You have to log in first!";
+	}
+	
+	/**
+	 * return a list of all online clients
+	 * 
+	 * @return
+	 */
+	private String getClientList() {
+		return userManagement.getAllUsers();
 	}
 	
 	public boolean isOnline() {
