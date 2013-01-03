@@ -42,7 +42,7 @@ public class RSAChannel implements Channel {
 	
 	protected void encryptedRead(boolean encrypted) {
 		this.encryptedRead = encrypted;
-		channel.encodedRead(encrypted);
+		channel.setEncodedRead(encrypted);
 	}
 	
 	/**
@@ -101,14 +101,18 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public String readLine() throws IOException {
-		//if (!encryptedRead) return channel.readLine();
 		byte[] line = channel.readBytes();
+		if (line == null) return null;
+	
+		// pass unencrypted messages through the layer
 		if (!encryptedRead) {
 			logger.debug("RSA not encrypted read");
 			return new String(line);
 		}
+		
+		// pass !list command undecrypted
 		if (Arrays.equals(line, "!list".getBytes())) return "!list";
-		if (line == null) return null;
+		
 		logger.debug("Next message received via RSA");
 		return decrypt(line);
 	}
@@ -146,7 +150,6 @@ public class RSAChannel implements Channel {
 			
 		} catch (FileNotFoundException e) {
 			logger.error("Private Key File Not Found");
-			// TODO fill in
 		} catch (EncryptionException e) {
 			logger.error("Decryption failed, check password");
 		} catch (IOException ex) {
@@ -171,10 +174,4 @@ public class RSAChannel implements Channel {
 		}
 		return null;
 	}
-
-	public void appendToInputStream(String line) {
-		channel.appendToInputStream(encrypt(line));
-	}
-
-	
 }

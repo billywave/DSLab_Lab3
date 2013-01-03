@@ -20,26 +20,30 @@ public class Base64Channel implements Channel {
 		this.channel = channel;
 	}
 	
-	protected void encodedRead(boolean encoded) {
+	/**
+	 * Sets the encode mode to true (default) or false to pass
+	 * unencoded messages through the 
+	 * @param encoded 
+	 */
+	protected void setEncodedRead(boolean encoded) {
 		this.encodedRead = encoded;
 	}
 
 	@Override
 	public String readLine() throws IOException {
-		String lineString = channel.readLine();
-		
-		if (lineString == null) {
-			logger.debug("B64 readLine A");
-			return channel.readLine();
-		}
+		String lineString = channel.readLine();	
+		if (lineString == null) return null;
+//		{
+//			logger.debug("B64 readLine A");
+//			return null; //channel.readLine();
+//		}
 		logger.debug("B64 readLine B");
-		//byte[] line = readBytes();
-		//if (line == null) return channel.readLine();
 		return new String(decode(lineString));
 	}
 	
 	public byte[] readBytes() throws IOException {
 		String line = channel.readLine();
+		// Used to be able to read unencrypted messages through the encryption layers (decorators)
 		if (!encodedRead) {
 			logger.debug("B64 not encoded read");
 			return line.getBytes();
@@ -71,14 +75,11 @@ public class Base64Channel implements Channel {
 	 * Decodes a given line in Base64
 	 */
 	private byte[] decode(String base64Line) {
-//		if (base64Line == null) return null;
-//		else if (base64Line.length() == 0) return null;
-//		else {
+		if (base64Line == null) return null;
 		if (base64Line.equals("!list")) return base64Line.getBytes();
-			byte[] base64ByteArray = base64Line.getBytes();
-			byte[] messageByteArray = Base64.decode(base64ByteArray);
-			return messageByteArray;
-//		}
+		byte[] base64ByteArray = base64Line.getBytes();
+		byte[] messageByteArray = Base64.decode(base64ByteArray);
+		return messageByteArray;
 	}
 	
 	/*
@@ -86,20 +87,7 @@ public class Base64Channel implements Channel {
 	 */
 	private String encode(byte[] messageLine) {
 		if (messageLine == null) return null;
-//		else {
-			byte[] base64ByteArray = Base64.encode(messageLine);
-			return new String(base64ByteArray);
-//		}
+		byte[] base64ByteArray = Base64.encode(messageLine);
+		return new String(base64ByteArray);
 	}
-
-	@Override
-	public void appendToInputStream(String line) {
-		channel.appendToInputStream(encode(line.getBytes()));
-	}
-	
-	public void appendToInputStream(byte[] line) {
-		channel.appendToInputStream(encode(line));
-	}
-	
-	
 }

@@ -86,7 +86,7 @@ public class SecureChannel implements Channel {
 	public String readLine() throws IOException {
 		if (pendingList) {
 			pendingList = false;
-			aesChannel.appendToInputStream("!logout");
+//			aesChannel.appendToInputStream("!logout");
 			return "!list";
 		}
 		
@@ -140,7 +140,7 @@ public class SecureChannel implements Channel {
 				if (loginName.equals(systemName)) {
 					//pendingList = true;
 					//aesChannel.appendToInputStream("!logout");
-					aesChannel.appendToInputStream("!list");
+//					aesChannel.appendToInputStream("!list");
 					readingAllowed = false;
 				} else readingAllowed = true;
 				return loginMessage;
@@ -252,9 +252,9 @@ public class SecureChannel implements Channel {
 		logger.info("Changing channel encryption to AES");
 	}
 
-	@Override
-	public void appendToInputStream(String line) {
-		channel.appendToInputStream(line);
-	}
+//	@Override
+//	public void appendToInputStream(String line) {
+//		channel.appendToInputStream(line);
+//	}
 	
 }

@@ -26,6 +26,66 @@ public class AESChannel implements Channel {
 	private SecretKeySpec secretKey;
 	private IvParameterSpec iv;
 	
+	public AESChannel(Base64Channel channel) {
+		this.channel = channel;
+		
+		try {
+			cipher = Cipher.getInstance("AES/CTR/NoPadding");
+		} catch (NoSuchAlgorithmException ex) {
+			ex.printStackTrace();
+		} catch (NoSuchPaddingException ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	protected void encryptedRead(boolean encrypted) {
+		this.encryptedRead = encrypted;
+		channel.setEncodedRead(encrypted);
+	}
+	
+	private byte[] encrypt(String message) {
+		if (message == null) return null;
+		
+		byte[] encryptedMessage = null;
+		try {
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
+			try {
+				encryptedMessage = cipher.doFinal(message.getBytes());
+			} catch (IllegalBlockSizeException ex) {
+				ex.printStackTrace();
+			} catch (BadPaddingException ex) {
+				ex.printStackTrace();
+			}
+		} catch (InvalidAlgorithmParameterException ex) {
+			ex.printStackTrace();
+		} catch (InvalidKeyException ex) {
+			//ex.printStackTrace();
+			logger.error("RSA Encryption: Key didn't match");
+		}
+		return encryptedMessage;
+	}
+	
+	private String decrypt(byte[] message) {
+		if (message == null) return null;
+		
+		String decryptedMessage = null;
+		try {
+			cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
+			try {
+				decryptedMessage = new String(cipher.doFinal(message));
+			} catch (IllegalBlockSizeException ex) {
+				ex.printStackTrace();
+			} catch (BadPaddingException ex) {
+				ex.printStackTrace();
+			}
+		} catch (InvalidAlgorithmParameterException ex) {
+			ex.printStackTrace();
+		} catch (InvalidKeyException ex) {
+			logger.error("RSA decryption: Key didn't match");
+		}
+		return decryptedMessage;
+	}
+
 	public String generateBase64SecretKey() {
 		try {
 			KeyGenerator generator = KeyGenerator.getInstance("AES");
@@ -60,73 +120,17 @@ public class AESChannel implements Channel {
 		logger.debug("IV getIV: " + new String(Base64.encode(iv.getIV())));
 	}
 
-	public AESChannel(Base64Channel channel) {
-		this.channel = channel;
-		try {
-			cipher = Cipher.getInstance("AES/CTR/NoPadding");
-		} catch (NoSuchAlgorithmException ex) {
-			ex.printStackTrace();
-		} catch (NoSuchPaddingException ex) {
-			ex.printStackTrace();
-		}
-	}
-	
-	protected void encryptedRead(boolean encrypted) {
-		this.encryptedRead = encrypted;
-		channel.encodedRead(encrypted);
-	}
-	
-	private byte[] encrypt(String message) {
-		if (message == null) return null;
-		byte[] encryptedMessage = null;
-		try {
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
-			try {
-				encryptedMessage = cipher.doFinal(message.getBytes());
-			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
-			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
-			}
-		} catch (InvalidAlgorithmParameterException ex) {
-			ex.printStackTrace();
-		} catch (InvalidKeyException ex) {
-			//ex.printStackTrace();
-			logger.error("RSA Encryption: Key didn't match");
-		}
-		return encryptedMessage;
-	}
-	
-	private String decrypt(byte[] message) {
-		if (message == null) return null;
-		String decryptedMessage = null;
-		try {
-			cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
-			try {
-				decryptedMessage = new String(cipher.doFinal(message));
-			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
-			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
-			}
-		} catch (InvalidAlgorithmParameterException ex) {
-			ex.printStackTrace();
-		} catch (InvalidKeyException ex) {
-			logger.error("RSA decryption: Key didn't match");
-		}
-		return decryptedMessage;
-	}
-
 	@Override
 	public String readLine() throws IOException {
 		byte[] line = channel.readBytes();
+		if (line == null) return null;
+		
+		// passing unencrypted messages through the layer
 		if (!encryptedRead) {
 			logger.debug("AES not encrypted read");
 			return new String(line);
 		}
-		if (line == null) {
-			return null;
-		}
+		
 		logger.debug("Next message received via AES");
 		return decrypt(line);
 	}
@@ -146,10 +150,4 @@ public class AESChannel implements Channel {
 		logger.debug("Previous message sent via AES");
 		channel.printBytes(encrypt(line));
 	}
-	
-	@Override
-	public void appendToInputStream(String line) {
-		channel.appendToInputStream(encrypt(line));
-	}
-	
 }

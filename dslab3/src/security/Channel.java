@@ -12,5 +12,5 @@ public interface Channel {
 	 * which will be returned on the next call of readLine()
 	 * @param line 
 	 */
-	public void appendToInputStream(String line);
+	//public void appendToInputStream(String line);
 }
