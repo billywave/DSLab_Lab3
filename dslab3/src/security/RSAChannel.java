@@ -2,6 +2,7 @@ package security;
 
 import java.io.*;
 import java.security.*;
+import java.util.Arrays;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -16,6 +17,8 @@ public class RSAChannel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
 	
 	private final Base64Channel channel;
+	
+	private boolean encryptedRead = true;
 	
 	private String user;
 	
@@ -35,6 +38,11 @@ public class RSAChannel implements Channel {
 		} catch (NoSuchPaddingException ex) {
 			ex.printStackTrace();
 		}
+	}
+	
+	protected void encryptedRead(boolean encrypted) {
+		this.encryptedRead = encrypted;
+		channel.encodedRead(encrypted);
 	}
 	
 	/**
@@ -93,12 +101,14 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public String readLine() throws IOException {
+		//if (!encryptedRead) return channel.readLine();
 		byte[] line = channel.readBytes();
-		if (line == null) {
-			logger.debug("Happens in readLine from RSAChannel");
-			return null;
-			
+		if (!encryptedRead) {
+			logger.debug("RSA not encrypted read");
+			return new String(line);
 		}
+		if (Arrays.equals(line, "!list".getBytes())) return "!list";
+		if (line == null) return null;
 		logger.debug("Next message received via RSA");
 		return decrypt(line);
 	}

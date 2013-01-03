@@ -14,13 +14,20 @@ public class Base64Channel implements Channel {
 	
 	private final TCPChannel channel;
 
+	private boolean encodedRead = true;
+	
 	public Base64Channel(TCPChannel channel) {
 		this.channel = channel;
+	}
+	
+	protected void encodedRead(boolean encoded) {
+		this.encodedRead = encoded;
 	}
 
 	@Override
 	public String readLine() throws IOException {
 		String lineString = channel.readLine();
+		
 		if (lineString == null) {
 			logger.debug("B64 readLine A");
 			return channel.readLine();
@@ -33,6 +40,10 @@ public class Base64Channel implements Channel {
 	
 	public byte[] readBytes() throws IOException {
 		String line = channel.readLine();
+		if (!encodedRead) {
+			logger.debug("B64 not encoded read");
+			return line.getBytes();
+		}
 		if (line == null) return null;
 		return decode(line);
 	}
@@ -63,6 +74,7 @@ public class Base64Channel implements Channel {
 //		if (base64Line == null) return null;
 //		else if (base64Line.length() == 0) return null;
 //		else {
+		if (base64Line.equals("!list")) return base64Line.getBytes();
 			byte[] base64ByteArray = base64Line.getBytes();
 			byte[] messageByteArray = Base64.decode(base64ByteArray);
 			return messageByteArray;
@@ -73,7 +85,7 @@ public class Base64Channel implements Channel {
 	 * Encodes a given line to Base64
 	 */
 	private String encode(byte[] messageLine) {
-//		if (messageLine == null) return null;
+		if (messageLine == null) return null;
 //		else {
 			byte[] base64ByteArray = Base64.encode(messageLine);
 			return new String(base64ByteArray);

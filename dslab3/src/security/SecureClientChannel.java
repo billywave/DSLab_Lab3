@@ -19,6 +19,7 @@ public class SecureClientChannel implements Channel {
 	private Channel channel;
 	private RSAChannel rsaChannel;
 	private AESChannel aesChannel;
+	private TCPChannel tcpChannel;
 	private final Socket socket;
 	
 	private String localChallenge;
@@ -42,10 +43,11 @@ public class SecureClientChannel implements Channel {
 //		waitingForMessage = 1;
 		loginName = "";
 		
-		Base64Channel base64Channel = new Base64Channel(new TCPChannel(socket));
+		this.tcpChannel = new TCPChannel(socket);
+		Base64Channel base64Channel = new Base64Channel(tcpChannel);
 		this.rsaChannel = new RSAChannel(base64Channel);
 		this.aesChannel = new AESChannel(base64Channel);
-		this.channel = rsaChannel;
+		channel = rsaChannel;
 		
 		// generates a 32 byte secure random number
 		SecureRandom secureRandom = new SecureRandom();
@@ -97,6 +99,8 @@ public class SecureClientChannel implements Channel {
 			// Check if message from server contains local challenge
 			if (splitLine[1].equals(localChallenge)) {
 				this.remoteChallenge = splitLine[2];
+				aesChannel.setSecretKey(splitLine[3]);
+				aesChannel.setIV(splitLine[4]);
 				channel.println(remoteChallenge);
 				channel.flush();
 				logger.debug("Sending Login Message #3: " + remoteChallenge);
@@ -136,6 +140,8 @@ public class SecureClientChannel implements Channel {
 			if (splitLine.length >= 2 && splitLine[0].equals("!login")) {
 				if (!authorized) {
 				channel = rsaChannel;
+				rsaChannel.encryptedRead(true);
+				aesChannel.encryptedRead(true);
 //				readingAllowed = true;
 				line = line + " " + localChallenge;
 				loginName = splitLine[1];
@@ -157,21 +163,24 @@ public class SecureClientChannel implements Channel {
 				}
 				
 				} else System.out.println("Please log out first, you are currently logged in as: " + loginName);
-			} else if (splitLine.length >= 1 && splitLine[0].equals("!list") && !authorized) {
-				boolean userFound = setUser(systemName, "12345");
-				setRemoteUser("auction-server");
+			} else if (splitLine.length == 1 && splitLine[0].equals("!list") && !authorized) {
+				//boolean userFound = setUser(systemName, "12345");
+				//setRemoteUser("auction-server");
 //				readingAllowed = true;
-				loginName = systemName;
-				if (userFound) {
-				channel.println("!login " + systemName + " " + socket.getLocalPort() + " " + localChallenge);
-				channel.flush();
+				//loginName = systemName;
+				//if (userFound) {
+				rsaChannel.encryptedRead(false);
+				tcpChannel.println("!list");
+				tcpChannel.flush();
 //				this.waitingForMessage = 2;
 //				return;
-				}
+				//}
 				//return;
 			} else if (splitLine.length >= 1 && splitLine[0].equals("!logout")) {
 				authorized = false;
 				channel = rsaChannel;
+				rsaChannel.encryptedRead(false);
+				aesChannel.encryptedRead(false);
 ////				waitingForMessage = 1;
 				aesChannel.println(line);
 				aesChannel.flush();

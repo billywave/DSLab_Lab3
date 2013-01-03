@@ -17,6 +17,7 @@ import security.Channel;
 import security.SecureChannel;
 import event.UserEvent;
 import exceptions.WrongEventTypeException;
+import security.SecureServerChannel;
 
 /**
  * Has the TCP connection to a cirtain client. for the requests comming over the
@@ -71,9 +72,7 @@ public class ClientHandler implements Runnable {
 	@Override
 	public void run() {
 		
-		SecureChannel secureChannel = new SecureChannel(socket);
-		secureChannel.setUser("auction-server", "23456"); //TODO change this to input on system.in
-		clientChannel = secureChannel;
+		clientChannel = new SecureServerChannel(socket);
 		
 //		try {
 //			out = new PrintWriter(socket.getOutputStream());
@@ -91,10 +90,10 @@ public class ClientHandler implements Runnable {
 		try {
 			// read line and pass it to the CommunicationProtocoll
 			while ((inputLine = clientChannel.readLine()) != null) {
-				logger.debug("Receiving client command: "+inputLine);
+				logger.debug("Receiving client command in clientHandler: "+inputLine);
 				outputLine = protocol.processInput(inputLine);
 				clientChannel.println(outputLine);
-				logger.debug("Sending client response: "+outputLine);
+				logger.debug("Sending client response in clientHandler: "+outputLine);
 				clientChannel.flush();
 			}
 		} catch (NullPointerException e) {
