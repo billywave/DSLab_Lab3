@@ -11,6 +11,7 @@ import org.bouncycastle.util.encoders.Base64;
  */
 public class Base64Channel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
+	private final String B64 = "a-zA-Z0-9/+";
 	
 	private final TCPChannel channel;
 

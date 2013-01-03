@@ -15,6 +15,7 @@ import org.bouncycastle.util.encoders.Base64;
  */
 public class SecureClientChannel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
+	private final String B64 = "a-zA-Z0-9/+";
 	
 	private Channel channel;
 	private RSAChannel rsaChannel;
@@ -22,8 +23,8 @@ public class SecureClientChannel implements Channel {
 	private TCPChannel tcpChannel;
 	private final Socket socket;
 	
-	private String localChallenge;
-	private String remoteChallenge;
+	private String localChallengeB64;
+	private String remoteChallengeB64;
 	
 	private String loginName = "";
 	private boolean authorized = false;
@@ -41,8 +42,8 @@ public class SecureClientChannel implements Channel {
 		SecureRandom secureRandom = new SecureRandom();
 		final byte[] number = new byte[32];
 		secureRandom.nextBytes(number);
-		localChallenge = new String(Base64.encode(number));
-		logger.debug("Local authentication challenge in base64: " + localChallenge);
+		localChallengeB64 = new String(Base64.encode(number));
+		logger.debug("Local authentication challenge in base64: " + localChallengeB64);
 		
 		
 	}
@@ -73,27 +74,34 @@ public class SecureClientChannel implements Channel {
 		
 		// receiving message #2
 		if (!authorized && splitLine[0].equals("!ok")  && splitLine.length >= 5) {
-			// Check if message from server contains local challenge
-			if (splitLine[1].equals(localChallenge)) {
-				this.remoteChallenge = splitLine[2];
-				aesChannel.setSecretKey(splitLine[3]);
-				aesChannel.setIV(splitLine[4]);
-				channel.println(remoteChallenge);
-				channel.flush();
-				logger.debug("Sending Login Message #3: " + remoteChallenge);
-				channel = aesChannel;
-				authorized = true;
-				System.out.println(loginName + " has been successfully authorized");
-				return this.readLine();
-			} else {
-				logger.error("Responded challenge from server: " + splitLine[1] + " doesn't match client challenge: " + localChallenge);
-				return this.readLine();
+			try {
+				assert line.matches("!ok ["+B64+"]{43}= ["+B64+"]{43}= ["+B64+"]{43}= ["+B64+"]{22}==") : "2nd message";
+			
+				// Check if message from server contains local challenge
+				if (splitLine[1].equals(localChallengeB64)) {
+					this.remoteChallengeB64 = splitLine[2];
+					aesChannel.setSecretKey(splitLine[3]);
+					aesChannel.setIV(splitLine[4]);
+					logger.debug("Changing channel to AES");
+					channel = aesChannel;
+
+					channel.println(remoteChallengeB64);
+					channel.flush();
+					logger.debug("Sending Login Message #3: " + remoteChallengeB64);
+					authorized = true;
+					System.out.println(loginName + " has been successfully authorized");
+					return this.readLine();
+				} else {
+					logger.error("Responded challenge from server: " + splitLine[1] + " doesn't match client challenge: " + localChallengeB64);
+					return this.readLine();
+				}
+			} catch (AssertionError e) {
+				logger.error("Assertion Error: " + e.getMessage());
 			}
 		}
 
 	logger.debug("Returning message: " + line);
-		return line;
-		
+		return line;	
 	}
 
 	@Override
@@ -112,9 +120,9 @@ public class SecureClientChannel implements Channel {
 		if (splitLine.length >= 2 && splitLine[0].equals("!login")) {
 			if (!authorized) {
 				channel = rsaChannel;
-				rsaChannel.encryptedRead(true);
+				rsaChannel.setEncryptedRead(true);
 				aesChannel.encryptedRead(true);
-				line = line + " " + localChallenge;
+				line = line + " " + localChallengeB64;
 				loginName = splitLine[1];
 				setRemoteUser("auction-server");
 
@@ -133,14 +141,14 @@ public class SecureClientChannel implements Channel {
 
 			} else System.out.println("Please log out first, you are currently logged in as: " + loginName);
 		} else if (splitLine.length == 1 && splitLine[0].equals("!list") && !authorized) {
-			rsaChannel.encryptedRead(false);
+			rsaChannel.setEncryptedRead(false);
 			tcpChannel.println("!list");
 			tcpChannel.flush();
 		} else if (splitLine.length >= 1 && splitLine[0].equals("!logout")) {
 			authorized = false;
 			channel = rsaChannel;
 			loginName = "";
-			rsaChannel.encryptedRead(false);
+			rsaChannel.setEncryptedRead(false);
 			aesChannel.encryptedRead(false);
 			aesChannel.println(line);
 			aesChannel.flush();

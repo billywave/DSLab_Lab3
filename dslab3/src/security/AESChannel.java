@@ -32,9 +32,9 @@ public class AESChannel implements Channel {
 		try {
 			cipher = Cipher.getInstance("AES/CTR/NoPadding");
 		} catch (NoSuchAlgorithmException ex) {
-			ex.printStackTrace();
+			logger.error("AES-Cipher: No such algorithm");
 		} catch (NoSuchPaddingException ex) {
-			ex.printStackTrace();
+			logger.error("AES-Cipher: No such padding");
 		}
 	}
 	
@@ -45,45 +45,41 @@ public class AESChannel implements Channel {
 	
 	private byte[] encrypt(String message) {
 		if (message == null) return null;
-		
-		byte[] encryptedMessage = null;
 		try {
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
 			try {
-				encryptedMessage = cipher.doFinal(message.getBytes());
+				return cipher.doFinal(message.getBytes());
 			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
+				logger.error("AES encryption failed");
 			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
+				logger.error("AES encryption failed");
 			}
 		} catch (InvalidAlgorithmParameterException ex) {
-			ex.printStackTrace();
+			logger.error("AES encryption failed: Invalid Algorithm parameter");
 		} catch (InvalidKeyException ex) {
-			//ex.printStackTrace();
 			logger.error("RSA Encryption: Key didn't match");
 		}
-		return encryptedMessage;
+		return null;
 	}
 	
 	private String decrypt(byte[] message) {
 		if (message == null) return null;
 		
-		String decryptedMessage = null;
 		try {
 			cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
 			try {
-				decryptedMessage = new String(cipher.doFinal(message));
+				return new String(cipher.doFinal(message));
 			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
+				logger.error("AES decryption failed");
 			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
+				logger.error("AES decryption failed");
 			}
 		} catch (InvalidAlgorithmParameterException ex) {
-			ex.printStackTrace();
+			logger.error("AES decryption failed: Invalid Algorithm Parameter");
 		} catch (InvalidKeyException ex) {
-			logger.error("RSA decryption: Key didn't match");
+			logger.error("AES decryption failed: Key didn't match");
 		}
-		return decryptedMessage;
+		return null;
 	}
 
 	public String generateBase64SecretKey() {
@@ -99,8 +95,8 @@ public class AESChannel implements Channel {
 		}
 	}
 	
-	public void setSecretKey(String key) {
-		secretKey =  new SecretKeySpec(Base64.decode(key.getBytes()), "AES");
+	public void setSecretKey(String keyB64) {
+		secretKey =  new SecretKeySpec(Base64.decode(keyB64.getBytes()), "AES");
 		//new SecretKey(keySpec);
 	}
 	
@@ -115,8 +111,8 @@ public class AESChannel implements Channel {
 		return ivString;
 	}
 	
-	public void setIV(String ivString) {
-		iv = new IvParameterSpec(Base64.decode(ivString.getBytes()));
+	public void setIV(String ivStringB64) {
+		iv = new IvParameterSpec(Base64.decode(ivStringB64.getBytes()));
 		logger.debug("IV getIV: " + new String(Base64.encode(iv.getIV())));
 	}
 

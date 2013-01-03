@@ -1,6 +1,8 @@
 package security;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.security.*;
 import java.util.Arrays;
 import javax.crypto.BadPaddingException;
@@ -8,10 +10,9 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder; 
+import org.bouncycastle.openssl.PasswordFinder;
 
 public class RSAChannel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
@@ -34,13 +35,13 @@ public class RSAChannel implements Channel {
 		try {
 			cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding");
 		} catch (NoSuchAlgorithmException ex) {
-			ex.printStackTrace();
+			logger.error("RSA-Cipher: No such algorithm");
 		} catch (NoSuchPaddingException ex) {
-			ex.printStackTrace();
+			logger.error("RSA-Cipher: No such padding");
 		}
 	}
 	
-	protected void encryptedRead(boolean encrypted) {
+	protected void setEncryptedRead(boolean encrypted) {
 		this.encryptedRead = encrypted;
 		channel.setEncodedRead(encrypted);
 	}
@@ -63,39 +64,36 @@ public class RSAChannel implements Channel {
 	
 	private byte[] encrypt(String message) {
 		if (message == null) return null;
-		byte[] encryptedMessage = null;
 		try {
 			cipher.init(Cipher.ENCRYPT_MODE, remotePublicKey);
 			try {
-				encryptedMessage = cipher.doFinal(message.getBytes());
+				return cipher.doFinal(message.getBytes());
 			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
+				logger.error("RSA encryption failed");
 			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
+				logger.error("RSA encryption failed");
 			}
 		} catch (InvalidKeyException ex) {
-			//ex.printStackTrace();
-			logger.error("RSA Encryption: Key didn't match");
+			logger.error("RSA encryption failed: Key didn't match");
 		}
-		return encryptedMessage;
+		return null;
 	}
 	
 	private String decrypt(byte[] message) {
 		if (message == null) return null;
-		String decryptedMessage = null;
 		try {
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			try {
-				decryptedMessage = new String(cipher.doFinal(message));
+				return new String(cipher.doFinal(message));
 			} catch (IllegalBlockSizeException ex) {
-				ex.printStackTrace();
+				logger.error("RSA decryption failed");
 			} catch (BadPaddingException ex) {
-				ex.printStackTrace();
+				logger.error("RSA decryption failed");
 			}
 		} catch (InvalidKeyException ex) {
 			logger.error("RSA decryption: Key didn't match");
 		}
-		return decryptedMessage;
+		return null;
 	}
 	
 
@@ -129,7 +127,7 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public void println(String line) {
-		logger.debug("Previouse message sent via RSA");
+		logger.debug("Previous message sent via RSA");
 		channel.printBytes(encrypt(line));
 	}
 	
@@ -154,7 +152,6 @@ public class RSAChannel implements Channel {
 			logger.error("Decryption failed, check password");
 		} catch (IOException ex) {
 			logger.error("Two");
-			ex.printStackTrace();
 		}
 		return null;
 	}
@@ -169,9 +166,7 @@ public class RSAChannel implements Channel {
 			return (PublicKey) in.readObject();
 		} catch (FileNotFoundException e) {
 			logger.error("Public Key File Not Found");
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
+		} catch (IOException ex) {}
 		return null;
 	}
 }
