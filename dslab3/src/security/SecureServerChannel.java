@@ -1,10 +1,19 @@
 package security;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
-import java.security.SecureRandom;
+import java.security.*;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.log4j.Logger;
+import javax.crypto.Mac;
+import org.bouncycastle.openssl.EncryptionException;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  *
@@ -29,6 +38,7 @@ public class SecureServerChannel implements Channel {
 
 	private String loginName;
 	private boolean authorized = false;
+	private Key sharedKey = null;
 
 	public SecureServerChannel(Socket socket) {
 		this.socket = socket;
@@ -115,6 +125,7 @@ public class SecureServerChannel implements Channel {
 						assert line.matches("["+B64+"]{43}=") : "3rd message";
 						if (splitLine.length >= 1 && splitLine[0].equals(localChallengeB64)) {
 							authorized = true;
+							sharedKey = this.readSharedKey(loginName);
 							return loginMessage;
 						} else {
 							logger.error("Responded challenge from client: " + splitLine[0] + " doesn't match server challenge: " + localChallengeB64);
@@ -132,6 +143,7 @@ public class SecureServerChannel implements Channel {
 					authorized = false;
 					loginMessage = "";
 					loginName = "";
+					sharedKey = null;
 					aesChannel.println("Changing server channel to RSA");
 					aesChannel.flush();
 					return line;
@@ -156,7 +168,40 @@ public class SecureServerChannel implements Channel {
 	@Override
 	public void println(String line) {
 		logger.debug("SSC: Sending response to client: " + line);
+		if (sharedKey != null) {
+			byte[] hash = generateHMAC(line,sharedKey);
+			line = line + " " + new String(Base64.encode(hash));
+		}
 		printChannel.println(line);
 		printChannel.flush();
+	}
+	
+	private Key readSharedKey(String user) {
+		try {
+			byte[] keyBytes = new byte[1024];
+			FileInputStream fis = new FileInputStream("keys/" + user + ".key");
+			fis.read(keyBytes);
+			fis.close();
+			byte[] input = Hex.decode(keyBytes);
+			return new SecretKeySpec(input,"HmacSHA256");
+		} catch (FileNotFoundException ex) {
+			logger.error("HMAC Shared key file not found");
+		} catch (IOException ex) {}
+		return null;
+	}
+	
+	private byte[] generateHMAC(String message, Key secretKey) {
+		if (secretKey == null || message == null) return null;
+		try {
+			Mac hMac = Mac.getInstance("HmacSHA256");
+			hMac.init(secretKey);
+			hMac.update(message.getBytes());
+			return hMac.doFinal();
+		} catch (InvalidKeyException ex) {
+			logger.error("HMAC: Invalid Key");
+		} catch (NoSuchAlgorithmException ex) {
+			logger.error("HMAC: No such Algorithm");
+		}
+		return null;
 	}
 }

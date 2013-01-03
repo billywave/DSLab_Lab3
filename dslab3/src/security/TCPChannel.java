@@ -30,10 +30,20 @@ public class TCPChannel implements Channel{
 	public String readLine() throws IOException {
 		return in.readLine();
 	}
+	
+	//@Override
+	public byte[] readBytes() throws IOException {
+		return in.readLine().getBytes();
+	}
 
 	@Override
 	public void println(String line) {
 		out.println(line);
+	}
+	
+	//@Override
+	public void printBytes(byte[] line) {
+		out.println(new String(line));
 	}
 
 	@Override

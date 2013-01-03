@@ -62,12 +62,12 @@ public class RSAChannel implements Channel {
 		return (remotePublicKey != null);
 	}
 	
-	private byte[] encrypt(String message) {
+	private byte[] encrypt(byte[] message) {
 		if (message == null) return null;
 		try {
 			cipher.init(Cipher.ENCRYPT_MODE, remotePublicKey);
 			try {
-				return cipher.doFinal(message.getBytes());
+				return cipher.doFinal(message);
 			} catch (IllegalBlockSizeException ex) {
 				logger.error("RSA encryption failed");
 			} catch (BadPaddingException ex) {
@@ -79,12 +79,12 @@ public class RSAChannel implements Channel {
 		return null;
 	}
 	
-	private String decrypt(byte[] message) {
+	private byte[] decrypt(byte[] message) {
 		if (message == null) return null;
 		try {
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			try {
-				return new String(cipher.doFinal(message));
+				return cipher.doFinal(message);
 			} catch (IllegalBlockSizeException ex) {
 				logger.error("RSA decryption failed");
 			} catch (BadPaddingException ex) {
@@ -99,17 +99,22 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public String readLine() throws IOException {
+		return new String(this.readBytes());
+	}
+	
+	//@Override
+	public byte[] readBytes() throws IOException {
 		byte[] line = channel.readBytes();
 		if (line == null) return null;
 	
 		// pass unencrypted messages through the layer
 		if (!encryptedRead) {
 			logger.debug("RSA not encrypted read");
-			return new String(line);
+			return line;
 		}
 		
 		// pass !list command undecrypted
-		if (Arrays.equals(line, "!list".getBytes())) return "!list";
+		if (Arrays.equals(line, "!list".getBytes())) return line;
 		
 		logger.debug("Next message received via RSA");
 		return decrypt(line);
@@ -127,6 +132,11 @@ public class RSAChannel implements Channel {
 
 	@Override
 	public void println(String line) {
+		this.printBytes(line.getBytes());
+	}
+	
+	//@Override
+	public void printBytes(byte[] line) {
 		logger.debug("Previous message sent via RSA");
 		channel.printBytes(encrypt(line));
 	}

@@ -1,13 +1,17 @@
 package security;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  *
@@ -28,6 +32,10 @@ public class SecureClientChannel implements Channel {
 	
 	private String loginName = "";
 	private boolean authorized = false;
+	private Key sharedKey = null;
+	
+	private String lastSentCommand;
+	private boolean allowRetry = true;
 
 	public SecureClientChannel(Socket socket) {
 		this.socket = socket;
@@ -44,8 +52,6 @@ public class SecureClientChannel implements Channel {
 		secureRandom.nextBytes(number);
 		localChallengeB64 = new String(Base64.encode(number));
 		logger.debug("Local authentication challenge in base64: " + localChallengeB64);
-		
-		
 	}
 	
 	/**
@@ -72,6 +78,30 @@ public class SecureClientChannel implements Channel {
 		if (line == null) throw new NullPointerException();
 		String[] splitLine = line.split(" ");
 		
+		// Checking for correct HMAC
+		if (sharedKey != null && splitLine.length > 1) {
+			String remoteHmac = splitLine[splitLine.length-1];
+			String hashedLine = line.substring(0, line.lastIndexOf(" "));
+			//logger.debug("Remote message without HMAC: --"+hashedLine+"--");
+			logger.debug("Remote HMAC: "+remoteHmac);
+			String localHmac = new String(Base64.encode(this.generateHMAC(hashedLine, sharedKey))); // TODO remove xxx
+			logger.debug("Local HMAC:  "+localHmac);
+			line = hashedLine;
+			
+//			// Resending last command
+//			if (!localHmac.equals(remoteHmac)) { 
+//				logger.error("HMAC check failed");
+//				if (lastSentCommand != null && allowRetry) {
+//					logger.error("Resending last message");
+//					this.println(lastSentCommand);
+//					allowRetry = false;
+//				}
+//			} else {
+//				logger.debug ("HMAC check passed");
+//				allowRetry = true;
+//			}
+		}
+		
 		// receiving message #2
 		if (!authorized && splitLine[0].equals("!ok")  && splitLine.length >= 5) {
 			try {
@@ -89,6 +119,7 @@ public class SecureClientChannel implements Channel {
 					channel.flush();
 					logger.debug("Sending Login Message #3: " + remoteChallengeB64);
 					authorized = true;
+					sharedKey = this.readSharedKey(loginName);
 					System.out.println(loginName + " has been successfully authorized");
 					return this.readLine();
 				} else {
@@ -148,6 +179,8 @@ public class SecureClientChannel implements Channel {
 			authorized = false;
 			channel = rsaChannel;
 			loginName = "";
+			sharedKey = null;
+			lastSentCommand = null;
 			rsaChannel.setEncryptedRead(false);
 			aesChannel.encryptedRead(false);
 			aesChannel.println(line);
@@ -157,9 +190,39 @@ public class SecureClientChannel implements Channel {
 			// needs to be authorized or RSA key wouldn't match
 			if (authorized) {
 				logger.debug("Secure: Sending client response: " + line);
+				lastSentCommand = line;
 				channel.println(line);
 				channel.flush();
 			}
 		}
+	}
+	
+		private Key readSharedKey(String user) {
+		try {
+			byte[] keyBytes = new byte[1024];
+			FileInputStream fis = new FileInputStream("keys/" + user + ".key");
+			fis.read(keyBytes);
+			fis.close();
+			byte[] input = Hex.decode(keyBytes);
+			return new SecretKeySpec(input,"HmacSHA256");
+		} catch (FileNotFoundException ex) {
+			logger.error("HMAC Shared key file not found");
+		} catch (IOException ex) {}
+		return null;
+	}
+	
+	private byte[] generateHMAC(String message, Key secretKey) {
+		if (secretKey == null || message == null) return null;
+		try {
+			Mac hMac = Mac.getInstance("HmacSHA256");
+			hMac.init(secretKey);
+			hMac.update(message.getBytes());
+			return hMac.doFinal();
+		} catch (InvalidKeyException ex) {
+			logger.error("HMAC: Invalid Key");
+		} catch (NoSuchAlgorithmException ex) {
+			logger.error("HMAC: No such Algorithm");
+		}
+		return null;
 	}
 }
