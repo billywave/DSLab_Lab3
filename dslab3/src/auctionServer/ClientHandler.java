@@ -145,13 +145,13 @@ public class ClientHandler implements Runnable {
 	}
 
 	public void shutdown() {
-		if (protocol.isOnline()) {
+		//if (protocol.isOnline()) {
 			clientChannel.println("shutdownServer");
 			clientChannel.flush();
-		} else {
-			clientChannel.println("Sorry, the Server just went offline. "
-					+ "For re- establishing the conneciton please contact the Server- crew and restart the Client!");
-		}
+		//} else {
+		//	clientChannel.println("Sorry, the Server just went offline. "
+		//			+ "For re- establishing the conneciton please contact the Server- crew and restart the Client!");
+		//}
 		//out.close();
 		try {
 			clientChannel.close();

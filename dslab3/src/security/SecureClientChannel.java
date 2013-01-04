@@ -53,6 +53,7 @@ public class SecureClientChannel implements Channel {
 		this.rsaChannel = new RSAChannel(base64Channel);
 		this.aesChannel = new AESChannel(base64Channel);
 		channel = rsaChannel;
+		rsaChannel.setEncryptedRead(false);
 		
 		// generates a 32 byte secure random number
 		SecureRandom secureRandom = new SecureRandom();

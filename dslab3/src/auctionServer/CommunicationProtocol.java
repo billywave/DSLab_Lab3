@@ -117,6 +117,9 @@ public class CommunicationProtocol {
 			logger.debug("!getFirstClientList - command set");
 			return getFirstClientList();
 		}
+		if (cmdPart.equals("!signedBid")) {
+			return determineSignedBid();
+		}
 		return "Error: Unknown command: " + input;
 	}
 	
@@ -319,44 +322,57 @@ public class CommunicationProtocol {
 	public User getUser() {
 		return user;
 	}
-        
-        /**
-         * Authentication of the auction server on the billing server
-         * Obtains a remote RMI handler for the secure billing server methods
-         * unless login fails
-         */
-        private void billingServerLogin() {
-            if (billingServerHandler != null) {
-                try {
-                    billingServerSecureHandler = billingServerHandler.login("auctionserver", "supersecure");
-                    if (billingServerSecureHandler == null) {
-                        logger.error("Login to billing server failed");
-                    } else logger.debug("Login to billing server");
-                } catch (RemoteException ex) {
-                    logger.error("Billing Server login Remote Exception");
-                }
-            } else {
-                logger.error("Not connected to the billing server"); // log
-            }
-        }
-        
-        /**
-         * Called by the auction server, when an auction ends to add it to the user's bill
-         * @param user Name of the user who won the auction as a string
-         * @param auctionID Unique auction id
-         * @param price Winning price of the auction
-         */
-        protected static void billAuction(String user, int auctionID, double price) {
-            if (billingServerSecureHandler != null) {
-                try {
-                billingServerSecureHandler.billAuction(user, auctionID, price);
-                } catch (RemoteException re) {
-                    logger.error("Billing Server Connection failed: Remote Exception");
-                }
-            } else logger.warn("Failed to bill auction: No connection to the billing server");
-        }
-	
-    public void shutdown() {
+
+	/**
+	 * Authentication of the auction server on the billing server Obtains a
+	 * remote RMI handler for the secure billing server methods unless login
+	 * fails
+	 */
+	private void billingServerLogin() {
+		if (billingServerHandler != null) {
+			try {
+				billingServerSecureHandler = billingServerHandler.login(
+						"auctionserver", "supersecure");
+				if (billingServerSecureHandler == null) {
+					logger.error("Login to billing server failed");
+				} else
+					logger.debug("Login to billing server");
+			} catch (RemoteException ex) {
+				logger.error("Billing Server login Remote Exception");
+			}
+		} else {
+			logger.error("Not connected to the billing server"); // log
+		}
+	}
+
+	/**
+	 * Called by the auction server, when an auction ends to add it to the
+	 * user's bill
+	 * 
+	 * @param user
+	 *            Name of the user who won the auction as a string
+	 * @param auctionID
+	 *            Unique auction id
+	 * @param price
+	 *            Winning price of the auction
+	 */
+	protected static void billAuction(String user, int auctionID, double price) {
+		if (billingServerSecureHandler != null) {
+			try {
+				billingServerSecureHandler.billAuction(user, auctionID, price);
+			} catch (RemoteException re) {
+				logger.error("Billing Server Connection failed: Remote Exception");
+			}
+		} else
+			logger.warn("Failed to bill auction: No connection to the billing server");
+	}
+
+	private String determineSignedBid() {
+		// TODO Alex- fill id
+		return null;
+	}
+
+	public void shutdown() {
 		/*
     	try {
 			registry.unbind(analyticsServerRef);

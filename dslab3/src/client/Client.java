@@ -3,7 +3,8 @@ package client;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Random;
 
 import loadTestingComponent.LoadTestClient;
 
@@ -30,7 +31,7 @@ public class Client {
 	int tcpPort;
 	int udpPort;
 	
-	HashMap<String, Integer> onlineUsers;
+	ArrayList<OnlineUser> onlineUsers = new ArrayList<OnlineUser>();
 	
 	boolean ioNotFound = false;
 	boolean isTestingClient = false;
@@ -134,7 +135,7 @@ public class Client {
     	    				String[] ip_portArray = userArray[i].split(":");
     	    				if (ip_portArray.length > 2) {
     	    					logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
-    	    					onlineUsers.put(ip_portArray[0], Integer.parseInt(ip_portArray[1]));
+    	    					onlineUsers.add(new OnlineUser(ip_portArray[0], Integer.parseInt(ip_portArray[1])));
     	    				}
     	    			}
     	    			incommingMessage = "";
@@ -144,7 +145,7 @@ public class Client {
     	    			for (int i = 0; i < userArray.length; i++) {
     	    				String[] ip_portArray = userArray[i].split(":");
     	    				if (ip_portArray.length > 2) {
-    	    					onlineUsers.put(ip_portArray[0], Integer.parseInt(ip_portArray[1]));
+    	    					onlineUsers.add(new OnlineUser(ip_portArray[0], Integer.parseInt(ip_portArray[1])));
     	    				}
     	    			}
     	    			System.out.println(incommingMessage.substring(7));
@@ -175,6 +176,31 @@ public class Client {
     			boolean auctionServerIsOnline = false;
     			
     			while (!auctionServerIsOnline) {
+    				
+    				// request a signed timestamp from 2 online clients
+    				if (onlineUsers.size() < 2) {
+    					logger.error("Bid cannot be signed- too less users are online");
+    				} else {
+    					Random randomGenerator = new Random();
+    					int random1 = randomGenerator.nextInt(onlineUsers.size());
+    					int random2 = -1;
+    					while (random2 > 0 && random1 != random2) {
+    						random2 = randomGenerator.nextInt(onlineUsers.size());
+    					}
+    					OnlineUser signer1 = onlineUsers.get(random1);
+    					OnlineUser signer2 = onlineUsers.get(random2);
+    					
+//    					try {
+//							Socket socket = new Socket(host, signer1.getPort());
+//						} catch (UnknownHostException e1) {
+//							// TODO Auto-generated catch block
+//							e1.printStackTrace();
+//						} catch (IOException e1) {
+//							// TODO Auto-generated catch block
+//							e1.printStackTrace();
+//						}
+    				}
+    				
     				try {
         				synchronized(this) {
         					wait(1000);
@@ -223,6 +249,30 @@ public class Client {
 			// in is already closed or not opened
 		} catch (NullPointerException e) {
 			// socket is already closed
+		}
+	}
+	
+	/**************************************************
+	 * inner class for rappint OnlineUser for list
+	 * @author Alexander Tatowsky
+	 **************************************************
+	 */
+	private class OnlineUser {
+		
+		private String ip = "";
+		private int port = 0;
+		
+		public OnlineUser(String ip, int port) {
+			this.ip = ip;
+			this.port = port;
+		}
+		
+		public String getIP() {
+			return ip;
+		}
+		
+		public int getPort() {
+			return port;
 		}
 	}
 	
