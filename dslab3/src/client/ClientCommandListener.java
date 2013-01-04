@@ -123,7 +123,7 @@ public class ClientCommandListener implements Runnable {
 			exit = true;
 		} else {
 			String[] commandArray = userInput.split(" ");
-			if (commandArray[0].equals("!login")) {
+			if (commandArray.length > 0 && commandArray[0].equals("!login")) {
 				userInput += " " + udpPort;
 				/*
 				try {
@@ -137,6 +137,9 @@ public class ClientCommandListener implements Runnable {
 			serverChannel.println(userInput);
 			serverChannel.flush();
 			
+			/**
+			 * TODO why doesn't this get done?
+			 */
 			// obtain list of other users
 			serverChannel.println("!getFirstClientList");
 			serverChannel.flush();

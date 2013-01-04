@@ -10,8 +10,8 @@ import loadTestingComponent.LoadTestClient;
 import org.apache.log4j.Logger;
 
 import security.Channel;
-import security.SecureChannel;
 import security.SecureClientChannel;
+import security.SecureServerChannel;
 
 /**
  * This class represents the Client and is the first Object 
@@ -87,7 +87,8 @@ public class Client {
         //Main_Client.clientExecutionService.execute(udpSocket);
         try {
             socket = new Socket(host, tcpPort);
-			serverChannel = new SecureClientChannel(socket);
+            serverChannel = new SecureClientChannel(socket);
+			
             //in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	        } catch (UnknownHostException e) {
 	            System.err.println("Don't know about host: " + host + ".");
@@ -137,6 +138,7 @@ public class Client {
     	    					onlineUsers.put(ip_portArray[0], Integer.parseInt(ip_portArray[1]));
     	    				}
     	    			}
+    	    			incommingMessage = "";
     	    		}
     	    		else if (incommingMessage.startsWith("users: ")) {
     	    			String[] userArray = incommingMessage.substring(7).split("\n");
@@ -147,6 +149,7 @@ public class Client {
     	    				}
     	    			}
     	    			System.out.println(incommingMessage.substring(7));
+    	    			incommingMessage = "";
     	    		}
     	    		else {
     	    			// if testing- dont print out, else print out
@@ -160,6 +163,7 @@ public class Client {
         	    			}
     	    			} else {
     	    				System.out.println(incommingMessage);
+    	    				incommingMessage = "";
     	    			}
     	    			
     	    		}
@@ -177,7 +181,7 @@ public class Client {
         					wait(1000);
         					try {
         						socket = new Socket(host, tcpPort);
-        						serverChannel = new SecureChannel(socket);
+        						serverChannel = new SecureClientChannel(socket);
         						auctionServerIsOnline = true;
         						commandListener.setServerChannel(serverChannel);
         						logger.info("The Aucitonserver just went online again. Please log in again!");

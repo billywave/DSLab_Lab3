@@ -106,8 +106,8 @@ public class SecureServerChannel implements Channel {
 						aesChannel.setIV(aesIvB64);
 						String returnMessage = "!ok " + remoteChallengeB64 + " " + localChallengeB64 + " " + aesSecretKeyB64 + " " + aesIvB64;
 						if (remoteUserFound) {
-							readChannel.println(returnMessage);
-							readChannel.flush();
+							rsaChannel.println(returnMessage);
+							rsaChannel.flush();
 							logger.debug("Sending Login Message #2: " + returnMessage);
 							logger.debug("Changing channel to AES");
 							readChannel = aesChannel;
@@ -144,8 +144,8 @@ public class SecureServerChannel implements Channel {
 					loginMessage = "";
 					loginName = "";
 					sharedKey = null;
-					aesChannel.println("Changing server channel to RSA");
-					aesChannel.flush();
+					tcpChannel.println("Changing server channel to RSA");
+					tcpChannel.flush();
 					return line;
 				}	
 			}
