@@ -137,6 +137,9 @@ public class ClientCommandListener implements Runnable {
 			serverChannel.println(userInput);
 			serverChannel.flush();
 			
+			/**
+			 * TODO why doesn't this get done?
+			 */
 			// obtain list of other users
 			serverChannel.println("!getFirstClientList");
 			serverChannel.flush();
