@@ -160,9 +160,7 @@ public class RSAChannel implements Channel {
 			logger.error("Private Key File Not Found");
 		} catch (EncryptionException e) {
 			logger.error("Decryption failed, check password");
-		} catch (IOException ex) {
-			logger.error("Two");
-		}
+		} catch (IOException ex) {}
 		return null;
 	}
 	

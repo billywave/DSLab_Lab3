@@ -20,6 +20,8 @@ import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 
+import com.sun.org.apache.xml.internal.security.utils.Base64;
+
 public class TimestampHandler implements Runnable {
 
 	private static Logger logger = Logger.getLogger(TimestampHandler.class);
@@ -70,7 +72,8 @@ public class TimestampHandler implements Runnable {
 	 * @return "!timestamp <auctionID> <price> <timestamp> <signature>"
 	 */
 	private String processInput(String inputLine) {
-		String answer = "";
+		String tmpAnswer = null;
+		String answer = null;
 		
 		if (inputLine.startsWith("!getTimestamp")) {
 			String[] splitInput = inputLine.split(" ");
@@ -78,7 +81,7 @@ public class TimestampHandler implements Runnable {
 				logger.error("got wrong formated timestamp- request");
 				return "wrong request format";
 			} else {
-				answer = "timestamp " + splitInput[1] + splitInput[2] + Long.toString(System.currentTimeMillis());
+				tmpAnswer = "timestamp " + splitInput[1] + splitInput[2] + Long.toString(System.currentTimeMillis());
 				
 				// sign the answer
 				Signature signature = null;
@@ -97,8 +100,9 @@ public class TimestampHandler implements Runnable {
 				try {
 					signature.initSign(privateKey);
 					/* Update and sign the data */
-					signature.update(answer.getBytes());
+					signature.update(tmpAnswer.getBytes());
 					byte[] signatureArray = signature.sign();
+					tmpAnswer = tmpAnswer + " " + new String(Base64.encode(signatureArray));
 				} catch (InvalidKeyException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -106,10 +110,10 @@ public class TimestampHandler implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
-				answer = answer + "signature-dummy";
+				answer = tmpAnswer;
 			}
 		}
+		
 		return answer;
 	}
 
