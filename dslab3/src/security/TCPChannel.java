@@ -28,22 +28,27 @@ public class TCPChannel implements Channel{
 
 	@Override
 	public String readLine() throws IOException {
-		return in.readLine();
+		logger.debug("Next message received via TCP");
+		
+		String line = in.readLine();
+		if (line != null && line.equals("")) return this.readLine();
+		return line;
 	}
 	
 	//@Override
 	public byte[] readBytes() throws IOException {
-		return in.readLine().getBytes();
+		return this.readLine().getBytes();
 	}
 
 	@Override
 	public void println(String line) {
+		logger.debug("Previous message sent via TCP");
 		out.println(line);
 	}
 	
 	//@Override
 	public void printBytes(byte[] line) {
-		out.println(new String(line));
+		this.println(new String(line));
 	}
 
 	@Override

@@ -7,6 +7,7 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Stack;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.log4j.Logger;
@@ -36,6 +37,8 @@ public class SecureClientChannel implements Channel {
 	
 	private String lastSentCommand;
 	private boolean allowRetry = true;
+	
+	private Stack<String> messageBuffer = new Stack<String>();
 
 	public SecureClientChannel(Socket socket) {
 		this.socket = socket;
@@ -130,6 +133,16 @@ public class SecureClientChannel implements Channel {
 				logger.error("Assertion Error: " + e.getMessage());
 			}
 		}
+		
+		while (!messageBuffer.isEmpty() && authorized) {
+			String storedMessage = messageBuffer.pop();
+			logger.debug("Secure: Sending stored client response: " + storedMessage);
+			lastSentCommand = storedMessage;
+				
+			channel.println(storedMessage);
+			channel.flush();
+		}
+		
 
 	logger.debug("Returning message: " + line);
 		return line;	
@@ -147,6 +160,8 @@ public class SecureClientChannel implements Channel {
 
 	@Override
 	public void println(String line) {
+				
+		
 		String[] splitLine = line.split(" ");
 		if (splitLine.length >= 2 && splitLine[0].equals("!login")) {
 			if (!authorized) {
@@ -156,6 +171,7 @@ public class SecureClientChannel implements Channel {
 				line = line + " " + localChallengeB64;
 				loginName = splitLine[1];
 				setRemoteUser("auction-server");
+				messageBuffer.clear();
 
 				System.out.println("Enter pass phrase for RSA Private key:");
 				try {
@@ -193,6 +209,9 @@ public class SecureClientChannel implements Channel {
 				lastSentCommand = line;
 				channel.println(line);
 				channel.flush();
+			} else {
+				logger.debug("Secure: Storing client response: " + line);
+				messageBuffer.push(line);
 			}
 		}
 	}
