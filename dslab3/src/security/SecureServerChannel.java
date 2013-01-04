@@ -2,16 +2,17 @@ package security;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
-import java.security.*;
-import javax.crypto.spec.SecretKeySpec;
-import org.apache.log4j.Logger;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+
 import javax.crypto.Mac;
-import org.bouncycastle.openssl.EncryptionException;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 

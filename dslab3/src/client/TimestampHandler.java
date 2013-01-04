@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 import security.RSAChannel;
 
-import com.sun.org.apache.xml.internal.security.utils.Base64;
+import org.bouncycastle.util.encoders.Base64;
 
 public class TimestampHandler implements Runnable {
 

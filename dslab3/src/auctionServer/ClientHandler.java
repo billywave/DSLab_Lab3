@@ -14,10 +14,9 @@ import org.apache.log4j.Logger;
 
 import rmi_Interfaces.MClientHandler_RO;
 import security.Channel;
-import security.SecureChannel;
+import security.SecureServerChannel;
 import event.UserEvent;
 import exceptions.WrongEventTypeException;
-import security.SecureServerChannel;
 
 /**
  * Has the TCP connection to a cirtain client. for the requests comming over the

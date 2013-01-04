@@ -11,7 +11,6 @@ import org.apache.log4j.Logger;
 
 import security.Channel;
 import security.SecureClientChannel;
-import security.SecureServerChannel;
 
 /**
  * This class represents the Client and is the first Object 

@@ -6,10 +6,6 @@ import java.net.Socket;
 
 import org.apache.log4j.Logger;
 
-import auctionServer.AuctionServer_ServerSocket;
-import auctionServer.ClientHandler;
-import auctionServer.Main_AuctionServer;
-
 public class Client_ServerSocket implements Runnable {
 
 	private static Logger logger = Logger.getLogger(Client_ServerSocket.class);
