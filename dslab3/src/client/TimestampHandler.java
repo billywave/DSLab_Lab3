@@ -1,24 +1,20 @@
 package client;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.openssl.EncryptionException;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
+
+import security.RSAChannel;
 
 import com.sun.org.apache.xml.internal.security.utils.Base64;
 
@@ -95,7 +91,7 @@ public class TimestampHandler implements Runnable {
 				/**
 				 * TODO Alex: find user and password
 				 */
-				PrivateKey privateKey = readPrivateKey("alice", "12345");
+				PrivateKey privateKey = RSAChannel.getPrivateKey();
 				
 				try {
 					signature.initSign(privateKey);
@@ -117,30 +113,4 @@ public class TimestampHandler implements Runnable {
 		return answer;
 	}
 
-	/**
-	 * Reads the private key of the given user
-	 */
-	private PrivateKey readPrivateKey(final String user, final String password) {
-		try {
-			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pem"), new PasswordFinder() {
-				@Override
-				public char[] getPassword() {
-					return password.toCharArray();
-				}
-			});
-			
-			KeyPair keyPair = (KeyPair) in.readObject();
-			return keyPair.getPrivate(); 
-			
-		} catch (FileNotFoundException e) {
-			logger.error("Private Key File Not Found");
-			// TODO fill in
-		} catch (EncryptionException e) {
-			logger.error("Decryption failed, check password");
-		} catch (IOException ex) {
-			logger.error("Two");
-			ex.printStackTrace();
-		}
-		return null;
-	}
 }

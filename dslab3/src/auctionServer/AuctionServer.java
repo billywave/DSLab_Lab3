@@ -1,7 +1,13 @@
 package auctionServer;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
+import security.SecureServerChannel;
 
 /**
  * Instance of the AuctionServer. 
@@ -31,6 +37,14 @@ public class AuctionServer {
 		PropertyConfigurator.configure("src/log4j.properties");        
 		
 		UserManagement userManagement = new UserManagement();
+		
+		System.out.println("Enter pass phrase for RSA Private key:");
+		try {
+			String password = (new BufferedReader(new InputStreamReader(System.in)).readLine());
+			SecureServerChannel.setServerPrivateKeyPassword(password);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 		
 		tcpSocket = new AuctionServer_ServerSocket(tcpPort, userManagement, analyticsServerRef, billingServerRef);
 		Main_AuctionServer.auctionServerExecutionService.execute(tcpSocket);

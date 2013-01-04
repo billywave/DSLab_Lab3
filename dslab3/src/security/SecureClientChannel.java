@@ -86,23 +86,23 @@ public class SecureClientChannel implements Channel {
 			String remoteHmac = splitLine[splitLine.length-1];
 			String hashedLine = line.substring(0, line.lastIndexOf(" "));
 			//logger.debug("Remote message without HMAC: --"+hashedLine+"--");
-			logger.debug("Remote HMAC: "+remoteHmac);
-			String localHmac = new String(Base64.encode(this.generateHMAC(hashedLine, sharedKey))); // TODO remove xxx
-			logger.debug("Local HMAC:  "+localHmac);
+			//logger.debug("Remote HMAC: "+remoteHmac);
+			String localHmac = new String(Base64.encode(this.generateHMAC(hashedLine, sharedKey)));
+			//logger.debug("Local HMAC:  "+localHmac);
 			line = hashedLine;
 			
-//			// Resending last command
-//			if (!localHmac.equals(remoteHmac)) { 
-//				logger.error("HMAC check failed");
-//				if (lastSentCommand != null && allowRetry) {
-//					logger.error("Resending last message");
-//					this.println(lastSentCommand);
-//					allowRetry = false;
-//				}
-//			} else {
-//				logger.debug ("HMAC check passed");
-//				allowRetry = true;
-//			}
+			// Resending last command
+			if (!localHmac.equals(remoteHmac)) { 
+				logger.error("HMAC check failed");
+				if (lastSentCommand != null && allowRetry) {
+					logger.error("Resending last message");
+					this.println(lastSentCommand);
+					allowRetry = false;
+				}
+			} else {
+				logger.debug ("HMAC check passed");
+				allowRetry = true;
+			}
 		}
 		
 		// receiving message #2
@@ -207,6 +207,7 @@ public class SecureClientChannel implements Channel {
 			if (authorized) {
 				logger.debug("Secure: Sending client response: " + line);
 				lastSentCommand = line;
+				allowRetry = true;
 				channel.println(line);
 				channel.flush();
 			} else {

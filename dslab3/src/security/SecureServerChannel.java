@@ -23,6 +23,7 @@ public class SecureServerChannel implements Channel {
 	private Logger logger = Logger.getLogger(this.getClass());
 	private final String B64 = "a-zA-Z0-9/+";
 
+	private static String password;
 	
 	private Channel readChannel;
 	private Channel printChannel;
@@ -50,7 +51,7 @@ public class SecureServerChannel implements Channel {
 		this.readChannel = rsaChannel;
 		this.printChannel = tcpChannel;
 		
-		setUser("auction-server", "23456");
+		setUser("auction-server", password);
 		// generates a 32 byte secure random number
 		SecureRandom secureRandom = new SecureRandom();
 		final byte[] number = new byte[32];
@@ -66,6 +67,10 @@ public class SecureServerChannel implements Channel {
 	 */
 	public final boolean setUser(String user, String rsaPrivateKeyPassword) {
 		return this.rsaChannel.loadUserKeys(user, rsaPrivateKeyPassword);
+	}
+	
+	public static void setServerPrivateKeyPassword(String password) {
+		SecureServerChannel.password = password;
 	}
 	
 	/**

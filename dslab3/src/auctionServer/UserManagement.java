@@ -268,4 +268,17 @@ public class UserManagement {
 		this.mClientHandler = mClientHandler;
 	}
 	
+	public int getAmountUsers() {
+		Iterator<User> iterator = syncUserList.iterator();
+		User user = null;
+		int amount = 0;
+		while (iterator.hasNext()) {
+			user = iterator.next();
+			if (user.isOnline()) {
+				amount++;
+			}
+		}
+		return amount;
+	}
+	
 }

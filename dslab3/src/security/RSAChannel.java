@@ -15,7 +15,7 @@ import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 
 public class RSAChannel implements Channel {
-	private Logger logger = Logger.getLogger(this.getClass());
+	private static Logger logger = Logger.getLogger(RSAChannel.class);
 	
 	private final Base64Channel channel;
 	
@@ -24,7 +24,7 @@ public class RSAChannel implements Channel {
 	private String user;
 	
 	private Cipher cipher;
-	private PrivateKey privateKey;
+	private static PrivateKey privateKey;
 	private PublicKey publicKey;
 	private PublicKey remotePublicKey;
 	
@@ -144,7 +144,7 @@ public class RSAChannel implements Channel {
 	/**
 	 * Reads the private key of the given user
 	 */
-	private PrivateKey readPrivateKey(final String user, final String password) {
+	public static PrivateKey readPrivateKey(final String user, final String password) {
 		try {
 			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pem"), new PasswordFinder() {
 				@Override
@@ -168,7 +168,7 @@ public class RSAChannel implements Channel {
 	 * Reads the public key of a given user
 	 * @param user 
 	 */
-	private PublicKey readPublicKey(String user) {
+	public static PublicKey readPublicKey(String user) {
 		try {
 			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pub.pem"));
 			return (PublicKey) in.readObject();
@@ -176,5 +176,9 @@ public class RSAChannel implements Channel {
 			logger.error("Public Key File Not Found");
 		} catch (IOException ex) {}
 		return null;
+	}
+	
+	public static PrivateKey getPrivateKey() {
+		return privateKey;
 	}
 }
