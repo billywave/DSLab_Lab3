@@ -128,7 +128,7 @@ public class Client {
     	    			ClientCommandListener.shutdown();
     	    		}
     	    		else if (incommingMessage.startsWith("firstusers: ")) {
-    	    			logger.debug("--------------------FIRST LIST-----------------------");
+    	    			logger.debug("Obtained first client-list");
     	    			String[] userArray = incommingMessage.substring(11).split("\n");
     	    			for (int i = 0; i < userArray.length; i++) {
     	    				logger.debug("workinging with: " + userArray[i]);

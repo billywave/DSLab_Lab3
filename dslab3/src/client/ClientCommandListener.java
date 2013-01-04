@@ -129,20 +129,24 @@ public class ClientCommandListener implements Runnable {
 				try {
 					UDPSocket.username = commandArray[1];
 				} catch (ArrayIndexOutOfBoundsException e) {
-
 				}*/
+				
+				logger.debug("sending TCP- message: " + userInput);
+				serverChannel.println(userInput);
+				serverChannel.flush();
 
+				/**
+				 * TODO why doesn't this get done?
+				 */
+				// obtain list of other users
+				serverChannel.println("!getFirstClientList");
+				serverChannel.flush();
+
+			} else {
+				logger.debug("sending TCP- message: " + userInput);
+				serverChannel.println(userInput);
+				serverChannel.flush();
 			}
-			logger.debug("sending TCP- message: " + userInput);
-			serverChannel.println(userInput);
-			serverChannel.flush();
-			
-			/**
-			 * TODO why doesn't this get done?
-			 */
-			// obtain list of other users
-			serverChannel.println("!getFirstClientList");
-			serverChannel.flush();
 		}
 		
 	}
