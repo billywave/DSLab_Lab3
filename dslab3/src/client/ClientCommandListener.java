@@ -157,7 +157,7 @@ public class ClientCommandListener implements Runnable {
 					OnlineUser signer2;
 					
 					// pick a random second signer which is not the fist and not you self
-					while (random2 < 0 && random1 != random2) {
+					while (random2 < 0 || random1 != random2) {
 						random2 = randomGenerator.nextInt(client.onlineUsers.size()-1);
 						signer2 = client.onlineUsers.get(random2);
 						if (signer2.getPort() == udpPort) {   // himself -> search goes on
