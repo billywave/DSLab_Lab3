@@ -110,6 +110,12 @@ public class CommunicationProtocol {
 		if (cmdPart.equals("!bid")) {
 			return bidForAuction();
 		}
+		if (cmdPart.equals("!groupBid")) {
+			return groupBidForAuction();
+		}
+		if (cmdPart.equals("!confirm")) {
+			return confirmGroupBid();
+		}
 		if (cmdPart.equals("!getClientList")) {
 			return getClientList();
 		}
@@ -293,6 +299,71 @@ public class CommunicationProtocol {
 			return userManagement.bidForAuction(user, auctionID, amount);
 		}
 		return "You have to log in first!";
+	}
+	
+	private String groupBidForAuction() {
+		if (user.isOnline()) {
+			int auctionID = 0;
+			double amount = 0.0;
+			
+			if (stringParts.length < 3) {
+				return "Error: Please enter the bid- command like this: " +
+						"!groupBid <auction-id> <amount>";
+			}
+			try {
+				auctionID = Integer.parseInt(stringParts[1]);
+				amount = Double.parseDouble(stringParts[2]);
+				amount = (double)(Math.round(amount*100))/100;
+				
+				if (amount <= 0 ) {
+					return "Error: The amount has to be > 0!";
+				}
+			} catch (NumberFormatException e) {
+				return "Error: Please enter the bid- command like this: " +
+						"!groupBid <auction-id> <amount>";
+			} catch (ArrayIndexOutOfBoundsException e) {
+				return "Error: Please enter the bid- command like this: " +
+						"!groupBid <auction-id> <amount>";
+			}
+			
+			return userManagement.groupBidForAuction(auctionID, amount, user);
+		}
+		return "You have to log in first!";
+	}
+	
+	private String confirmGroupBid() {
+		if (user.isOnline()) {
+			int auctionID = 0;
+			double amount = 0.0;
+			User biddingUser;
+			
+			if (stringParts.length < 3) {
+				return "Error: Please enter the bid- command like this: " +
+						"!groupBid <auction-id> <amount>";
+			}
+			try {
+				auctionID = Integer.parseInt(stringParts[1]);
+				amount = Double.parseDouble(stringParts[2]);
+				amount = (double)(Math.round(amount*100))/100;
+				String userName = stringParts[3];
+				
+				biddingUser = userManagement.getUserByName(userName);
+				if (biddingUser == null) return "!rejected User not found";
+				
+				if (amount <= 0 ) {
+					return "!rejected The amount has to be > 0!";
+				}
+			} catch (NumberFormatException e) {
+				return "!rejected Please enter the bid- command like this: " +
+						"!confirm <auction-id> <amount> <username>";
+			} catch (ArrayIndexOutOfBoundsException e) {
+				return "!rejected Please enter the bid- command like this: " +
+						"!confirm <auction-id> <amount> <username>";
+			}
+			
+			return userManagement.confirmGroupBid(auctionID, amount, biddingUser, user);
+		}
+		return "!rejected You have to log in first!";
 	}
 	
 	/**

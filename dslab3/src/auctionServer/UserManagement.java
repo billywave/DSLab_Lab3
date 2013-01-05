@@ -12,6 +12,7 @@ import java.util.Timer;
 
 import event.BidEvent;
 import exceptions.WrongEventTypeException;
+import java.util.*;
 import org.apache.log4j.Logger;
 
 import rmi_Interfaces.MClientHandler_RO;
@@ -21,8 +22,10 @@ public class UserManagement {
 	
 	public static Timer timer = new Timer();
 	
-	List<User> syncUserList = Collections.synchronizedList(new ArrayList<User>());
-	List<Auction> syncAuctionList = Collections.synchronizedList(new ArrayList<Auction>());
+	final List<User> syncUserList = Collections.synchronizedList(new ArrayList<User>());
+	final List<Auction> syncAuctionList = Collections.synchronizedList(new ArrayList<Auction>());
+	// String: auctionid + " " + amount + " " + user
+	final Map<String, Groupbid> syncGroupBids = Collections.synchronizedMap(new HashMap<String, Groupbid>());
 	
 	// RMI
 	MClientHandler_RO mClientHandler = null;
@@ -223,6 +226,130 @@ public class UserManagement {
 		}
 		
 		return answer;
+	}
+	
+	/**
+	 * Putting a groupBid on wait for confirmation
+	 * @param auctionID
+	 * @param amount
+	 * @param user
+	 * @return
+	 */
+	public String groupBidForAuction(int auctionID, double amount, User user) {
+		synchronized (syncAuctionList) {
+			Iterator<Auction> iterator = syncAuctionList.iterator();
+			Auction auction;
+
+			while (iterator.hasNext()) {
+				auction = iterator.next();
+				if (auction.getId() == auctionID) {
+					if (amount > auction.getHightestAmount()) {
+						Groupbid groupbid = new Groupbid(auction, amount, user);
+						syncGroupBids.put(auctionID + " " + amount + " " + user.getName(), groupbid);
+						logger.debug(syncGroupBids.toString());
+
+						logger.info(user.getName() + " put a groupBid  " + printHighestAmount(amount) + " on " + auction.getDescribtion() + " " + auction.getId());
+						return "You successfully put a groupBid with " + printHighestAmount(amount) + 
+								" on '" + auction.getDescribtion() + "'.";
+					}
+					else {
+						return "You unsuccessfully bid with " + printHighestAmount(amount) + " on '" + 
+								auction.getDescribtion() + "'. Current highest bid is " + auction.getHightestAmount() + ".";
+					}
+				}
+			}
+		}
+		return "The Aucion- ID '" + auctionID + "' is unknown!";
+	}
+	
+	/**
+	 * Confirming an existing groupbid
+	 * @param auctionID
+	 * @param amount
+	 * @param biddingUser
+	 * @param confirmer
+	 * @return 
+	 */
+	public String confirmGroupBid(int auctionID, double amount, User biddingUser, User confirmer) {
+		String key = auctionID + " " + amount + " " + biddingUser.getName();
+		
+		if (!syncGroupBids.containsKey(key)) {
+			return "!rejected GroupBid not found";
+		} else {
+
+			Groupbid bid = syncGroupBids.get(key);
+			Auction auction = bid.getAuction();
+
+
+
+			bid.confirm(confirmer);
+			while(!bid.greenlid() && amount > auction.getHightestAmount()) {
+				try {
+					Thread.sleep(250);
+				} catch (InterruptedException ex) {}
+			}
+			logger.debug(confirmer + " left the loop");
+
+			if (bid.greenlid() && amount > auction.getHightestAmount()) {
+				logger.debug("Enough confirms received");
+				synchronized (syncAuctionList) {
+					if (bid.isInitialConfirmer(confirmer)) {
+						logger.debug("Initial confirmer: " + confirmer);
+						User oldHighestBidder = auction.getHighestBidder();
+
+						auction.setHightestAmount(amount);
+						auction.setHighestBidder(biddingUser);
+
+//						// not sure if the following also applies to groupBids
+//						// -- BEGIN --
+//						if (!oldHighestBidder.getName().equals("none")) {
+//
+//							//RMI- BID_PLACED
+//							Timestamp logoutTimestamp = new Timestamp(System.currentTimeMillis());
+//							long timestamp = logoutTimestamp.getTime();
+//							try {
+//								mClientHandler.processEvent(new BidEvent(BidEvent.BID_OVERBID, timestamp, biddingUser.getName(), auctionID, amount));
+//							} catch (RemoteException e) {
+//								logger.error("Failed to connect to the Analytics Server");
+//							} catch (WrongEventTypeException e) {
+//								logger.error("Wrong type of event");
+//							}
+//
+//							String msg = "!new-bid " + auction.getDescribtion();
+//							// send UDP- notofication that he has been oberbidden if he is online
+//							if (oldHighestBidder.isOnline()) {
+//								try {
+//									AuctionServer_UDPSocket.getInstamce().sendMessage(oldHighestBidder.getInternetAdress(), oldHighestBidder.getUdpPort(), msg);
+//								} catch (IOException e) {
+//									System.out.println("Error: Trying to send UDP- Message to unknown user");
+//								}
+//							} else {
+//								// if he is not online store the notification
+//								oldHighestBidder.storeNotification(msg);
+//							}
+//						} else {
+//							//RMI- BID_PLACED
+//							Timestamp logoutTimestamp = new Timestamp(System.currentTimeMillis());
+//							long timestamp = logoutTimestamp.getTime();
+//							try {
+//								mClientHandler.processEvent(new BidEvent(BidEvent.BID_PLACED, timestamp, biddingUser.getName(), auctionID, amount));
+//							} catch (RemoteException e) {
+//								logger.error("Failed to connect to the Analytics Server");
+//							} catch (WrongEventTypeException e) {
+//								logger.error("Wrong type of event");
+//							}
+//						}
+//						// -- END --
+
+						logger.info(biddingUser.getName() + " bid  " + printHighestAmount(amount) + " for the group on " + auction.getDescribtion() + " " + auction.getId());
+					} else logger.debug("Second confirmer: " + confirmer);
+					return "!confirmed";
+
+				}
+			} else {
+				return "!rejected amount not high enough";
+			}
+		}
 	}
 	
 	/**
