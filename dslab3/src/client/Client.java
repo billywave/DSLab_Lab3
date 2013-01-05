@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Random;
 
 import loadTestingComponent.LoadTestClient;
 
@@ -42,6 +41,7 @@ public class Client {
     //UDPSocket udpSocket;
     
     ClientCommandListener commandListener;
+    Client_ServerSocket serverSocket;
     
     private LoadTestClient loadTestClient;
     
@@ -59,7 +59,7 @@ public class Client {
 	public Client(String args[]) throws NumberFormatException, ArrayIndexOutOfBoundsException {
 			this.host = args[0];
 			this.tcpPort = Integer.parseInt(args[1]);
-			//this.udpPort = Integer.parseInt(args[2]);	
+			this.udpPort = Integer.parseInt(args[2]);	
 			//logger.setLevel(Level.ERROR);
 	}
 	
@@ -101,9 +101,10 @@ public class Client {
 	            // propper shutdown of the ExecutorService
 	            Main_Client.clientExecutionService.shutdown(); // Disable new tasks from being submitted
         }
-		
 		commandListener = new ClientCommandListener(serverChannel, udpPort, this);
-    	
+		serverSocket = new Client_ServerSocket(udpPort);
+		Main_Client.clientExecutionService.execute(serverSocket);
+		
 		if (!isTestingClient) {
 			Main_Client.clientExecutionService.execute(commandListener);
 			this.listenToAuctionServer();
@@ -129,26 +130,37 @@ public class Client {
     	    		}
     	    		else if (incommingMessage.startsWith("firstusers: ")) {
     	    			logger.debug("Obtained first client-list");
-    	    			String[] userArray = incommingMessage.substring(11).split("\n");
-    	    			for (int i = 0; i < userArray.length; i++) {
-    	    				logger.debug("workinging with: " + userArray[i]);
-    	    				String[] ip_portArray = userArray[i].split(":");
-    	    				if (ip_portArray.length > 2) {
-    	    					logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
-    	    					onlineUsers.add(new OnlineUser(ip_portArray[0], Integer.parseInt(ip_portArray[1])));
-    	    				}
-    	    			}
+    	    			String[] userArray = incommingMessage.substring(12).split("\n");
+    	    			
+						synchronized (onlineUsers) {
+							onlineUsers.clear();
+							for (int i = 0; i < userArray.length; i++) {
+								String[] inetAddress_name = userArray[i].split(" ");
+								String[] ip_portArray = inetAddress_name[0].split(":");
+								if (ip_portArray.length >= 2) {
+//									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
+									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1])));
+								}
+							}
+						}
+						logger.debug("currently are " + onlineUsers.size() + " users online");
     	    			incommingMessage = "";
     	    		}
     	    		else if (incommingMessage.startsWith("users: ")) {
-    	    			String[] userArray = incommingMessage.substring(7).split("\n");
-    	    			for (int i = 0; i < userArray.length; i++) {
-    	    				String[] ip_portArray = userArray[i].split(":");
-    	    				if (ip_portArray.length > 2) {
-    	    					onlineUsers.add(new OnlineUser(ip_portArray[0], Integer.parseInt(ip_portArray[1])));
-    	    				}
+    	    			synchronized (onlineUsers) {
+    	    				onlineUsers.clear();
+	    	    			String[] userArray = incommingMessage.substring(7).split("\n");
+	    	    			for (int i = 0; i < userArray.length; i++) {
+	    	    				String[] inetAddress_name = userArray[i].split(" ");
+								String[] ip_portArray = inetAddress_name[0].split(":");
+								if (ip_portArray.length >= 2) {
+//									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
+									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1])));
+								}
+	    	    			}
+	    	    			logger.debug("currently are " + onlineUsers.size() + " users online");
+	    	    			System.out.println(incommingMessage.substring(7));
     	    			}
-    	    			System.out.println(incommingMessage.substring(7));
     	    			incommingMessage = "";
     	    		}
     	    		else {
@@ -173,33 +185,10 @@ public class Client {
     		} catch (NullPointerException e) {
     			logger.info("The Auctionserver just went offline. You have been logged out automatically.");
     			
-    			boolean auctionServerIsOnline = false;
+    			boolean auctionServerIsOnline = false; // for Client itself
+    			commandListener.serverIsOnline = false; // for comand listener- to catch interactive commands
     			
     			while (!auctionServerIsOnline) {
-    				
-    				// request a signed timestamp from 2 online clients
-    				if (onlineUsers.size() < 2) {
-    					logger.error("Bid cannot be signed- too less users are online");
-    				} else {
-    					Random randomGenerator = new Random();
-    					int random1 = randomGenerator.nextInt(onlineUsers.size());
-    					int random2 = -1;
-    					while (random2 > 0 && random1 != random2) {
-    						random2 = randomGenerator.nextInt(onlineUsers.size());
-    					}
-    					OnlineUser signer1 = onlineUsers.get(random1);
-    					OnlineUser signer2 = onlineUsers.get(random2);
-    					
-//    					try {
-//							Socket socket = new Socket(host, signer1.getPort());
-//						} catch (UnknownHostException e1) {
-//							// TODO Auto-generated catch block
-//							e1.printStackTrace();
-//						} catch (IOException e1) {
-//							// TODO Auto-generated catch block
-//							e1.printStackTrace();
-//						}
-    				}
     				
     				try {
         				synchronized(this) {
@@ -252,28 +241,8 @@ public class Client {
 		}
 	}
 	
-	/**************************************************
-	 * inner class for rappint OnlineUser for list
-	 * @author Alexander Tatowsky
-	 **************************************************
-	 */
-	private class OnlineUser {
-		
-		private String ip = "";
-		private int port = 0;
-		
-		public OnlineUser(String ip, int port) {
-			this.ip = ip;
-			this.port = port;
-		}
-		
-		public String getIP() {
-			return ip;
-		}
-		
-		public int getPort() {
-			return port;
-		}
+	public synchronized ArrayList getOnlineUsers() {
+		return this.onlineUsers;
 	}
 	
 	/**

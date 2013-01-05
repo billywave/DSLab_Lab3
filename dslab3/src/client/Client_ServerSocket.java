@@ -15,6 +15,7 @@ public class Client_ServerSocket implements Runnable {
 	private boolean listening = true;
 	
 	public Client_ServerSocket(int tcpPort) {
+		logger.debug("setting up Clients ServerSocket on port " + tcpPort);
 		this.tcpPort = tcpPort;
 	}
 	
@@ -27,6 +28,7 @@ public class Client_ServerSocket implements Runnable {
 		}
 		while (listening) {
 			try {
+				logger.debug("Clients server socket is listening for incommings");
 				Socket clientSocket = myServerSocket.accept();
 				TimestampHandler timestampHandler = new TimestampHandler(clientSocket);
 				Main_Client.clientExecutionService.execute(timestampHandler);

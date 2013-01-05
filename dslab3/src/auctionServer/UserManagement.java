@@ -254,7 +254,7 @@ public class UserManagement {
 		while (iterator.hasNext()) {
 			user = iterator.next();
 			if (user.isOnline()) {
-				users += user.getInternetAdress().toString().substring(1) + ":" + user.getPort() + " - " + user.getName() + "\n";
+				users += user.getInternetAdress().toString().substring(1) + ":" + user.getUdpPort() + " - " + user.getName() + "\n";
 			}
 		}
 		return users;

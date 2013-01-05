@@ -3,7 +3,10 @@ package client;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
@@ -22,10 +25,11 @@ public class ClientCommandListener implements Runnable {
 	int udpPort = 0;
 
 	Client client;
-
+	boolean serverIsOnline = true;
+	
 	public ClientCommandListener(Channel serverChannel, int udpPort, Client client) {
 		//this.socket = socket;
-		//this.udpPort = udpPort;
+		this.udpPort = udpPort;
 		this.client = client; // for shutting down
 		
 		this.serverChannel = serverChannel;
@@ -135,13 +139,41 @@ public class ClientCommandListener implements Runnable {
 				serverChannel.println(userInput);
 				serverChannel.flush();
 
-				/**
-				 * TODO why doesn't this get done?
-				 */
 				// obtain list of other users
 				serverChannel.println("!getFirstClientList");
 				serverChannel.flush();
-
+			} 
+			else if (commandArray.length > 0 && commandArray[0].equals("!bid") && !serverIsOnline) {
+				logger.debug("trying to get signed timestamp");
+				
+				// request a signed timestamp from 2 online clients
+				if (client.onlineUsers.size() < 1) {
+					logger.error("Bid cannot be signed- too less users are online");
+				} else {
+					Random randomGenerator = new Random();
+					int random1 = randomGenerator.nextInt(client.onlineUsers.size());
+					int random2 = -1;
+					OnlineUser signer1;
+					OnlineUser signer2;
+					
+					// pick a random second signer which is not the fist and not you self
+					while (random2 < 0 && random1 != random2) {
+						random2 = randomGenerator.nextInt(client.onlineUsers.size()-1);
+						signer2 = client.onlineUsers.get(random2);
+						if (signer2.getPort() == udpPort) {   // himself -> search goes on
+							random2 = -1;
+						}
+					}
+					signer1 = client.onlineUsers.get(random1);
+					signer2 = client.onlineUsers.get(random2);
+					
+					if (commandArray.length <= 3) {
+						reiciveSignedTimestamp(signer1, commandArray);
+						reiciveSignedTimestamp(signer2, commandArray);
+					}
+					
+				}
+				
 			} else {
 				logger.debug("sending TCP- message: " + userInput);
 				serverChannel.println(userInput);
@@ -151,6 +183,38 @@ public class ClientCommandListener implements Runnable {
 		
 	}
 
+	private String reiciveSignedTimestamp(OnlineUser signer, String[] commandArray) {
+		PrintWriter out = null;
+        BufferedReader in = null;
+		String signedAnswer = "";
+		
+		try {
+			Socket socket1 = new Socket(signer.getIP(), signer.getPort());
+			out = new PrintWriter(socket1.getOutputStream(), true);
+	        in = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		String auctionID = commandArray[1];
+		String price = commandArray[2];
+		logger.debug("request signed timestamp with msg: " + "!getTimestamp " + auctionID + " " + price);
+		out.print("!getTimestamp " + auctionID + " " + price + "\n");
+		out.flush();
+		try {
+			signedAnswer = in.readLine();
+			logger.debug("got signed answer: " + signedAnswer);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return signedAnswer;
+	}
+	
 	public void setServerChannel(Channel serverChannel) {
 		this.serverChannel = serverChannel;
 	}

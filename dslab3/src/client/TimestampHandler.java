@@ -31,25 +31,23 @@ public class TimestampHandler implements Runnable {
 	
 	@Override
 	public void run() {
+		logger.debug("TimestampHandler startet on socket "+ socket+" to create a signed timestamp");
 		// communicate
 		String inputLine, outputLine;
-		InetAddress inetAddress = socket.getInetAddress();
-		int port = socket.getPort();
 		
 		try {
 			out = new PrintWriter(socket.getOutputStream());
-			in = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (IOException e) {
 			logger.error("Failed to bind input or output stream to user client");
 		}
 		try {
 			// read line and pass it to the CommunicationProtocoll
 			while ((inputLine = in.readLine()) != null) {
-				logger.debug("Receiving client command in clientHandler: " + inputLine);
+				logger.debug("Receiving client command in timestampHandler: " + inputLine);
 				outputLine = processInput(inputLine);
 				out.println(outputLine);
-				logger.debug("Sending client response in clientHandler: " + outputLine);
+				logger.debug("Sending client response in timestampHandler: " + outputLine);
 				out.flush();
 			}
 		} catch (NullPointerException e) {
@@ -77,7 +75,7 @@ public class TimestampHandler implements Runnable {
 				logger.error("got wrong formated timestamp- request");
 				return "wrong request format";
 			} else {
-				tmpAnswer = "timestamp " + splitInput[1] + splitInput[2] + Long.toString(System.currentTimeMillis());
+				tmpAnswer = "timestamp " + splitInput[1] + " " + splitInput[2]  + " " + Long.toString(System.currentTimeMillis());
 				
 				// sign the answer
 				Signature signature = null;

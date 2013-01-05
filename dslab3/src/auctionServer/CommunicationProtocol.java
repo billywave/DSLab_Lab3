@@ -155,7 +155,7 @@ public class CommunicationProtocol {
 			} catch (NullPointerException e) {
 				logger.error("Failed to connect to the Analytics Server");
 			}
-			logger.info("User " + parameterPart + " logged in");
+			logger.info("User " + parameterPart + " logged in with Port: " + udpPort);
 			return answer = "Successfully logged in as " + parameterPart;
 		} else {
 			user = new User("",false,null,0,0);
