@@ -236,7 +236,12 @@ public class UserManagement {
 	 * @return
 	 */
 	public String groupBidForAuction(int auctionID, double amount, User user) {
-		synchronized (syncAuctionList) {
+		//synchronized (syncAuctionList) {
+		if (syncGroupBids.size()*2 >= getAmountUsers()) {
+			return "!rejected There need to be at least twice as much users online than unconfirmed groupBids";
+		} else if (getAmountUsers() < 5) {
+			return "!rejected There need to be at least 5 users online to prevent a deadlock";
+		} else {
 			Iterator<Auction> iterator = syncAuctionList.iterator();
 			Auction auction;
 
@@ -246,20 +251,20 @@ public class UserManagement {
 					if (amount > auction.getHightestAmount()) {
 						Groupbid groupbid = new Groupbid(auction, amount, user);
 						syncGroupBids.put(auctionID + " " + amount + " " + user.getName(), groupbid);
-						logger.debug(syncGroupBids.toString());
+						//logger.debug(syncGroupBids.toString());
 
 						logger.info(user.getName() + " put a groupBid  " + printHighestAmount(amount) + " on " + auction.getDescribtion() + " " + auction.getId());
 						return "You successfully put a groupBid with " + printHighestAmount(amount) + 
 								" on '" + auction.getDescribtion() + "'.";
 					}
 					else {
-						return "You unsuccessfully bid with " + printHighestAmount(amount) + " on '" + 
+						return "You unsuccessfully put a  groupBid with " + printHighestAmount(amount) + " on '" + 
 								auction.getDescribtion() + "'. Current highest bid is " + auction.getHightestAmount() + ".";
 					}
 				}
 			}
 		}
-		return "The Aucion- ID '" + auctionID + "' is unknown!";
+		return "!rejected The Aucion- ID '" + auctionID + "' is unknown!";
 	}
 	
 	/**
@@ -280,73 +285,31 @@ public class UserManagement {
 			Groupbid bid = syncGroupBids.get(key);
 			Auction auction = bid.getAuction();
 
-
-
 			bid.confirm(confirmer);
 			while(!bid.greenlid() && amount > auction.getHightestAmount()) {
 				try {
 					Thread.sleep(250);
 				} catch (InterruptedException ex) {}
 			}
-			logger.debug(confirmer + " left the loop");
-
+			//logger.debug(confirmer + " left the loop");
+			
 			if (bid.greenlid() && amount > auction.getHightestAmount()) {
 				logger.debug("Enough confirms received");
-				synchronized (syncAuctionList) {
+				//synchronized (syncAuctionList) {
 					if (bid.isInitialConfirmer(confirmer)) {
-						logger.debug("Initial confirmer: " + confirmer);
-						User oldHighestBidder = auction.getHighestBidder();
-
-						auction.setHightestAmount(amount);
-						auction.setHighestBidder(biddingUser);
-
-//						// not sure if the following also applies to groupBids
-//						// -- BEGIN --
-//						if (!oldHighestBidder.getName().equals("none")) {
-//
-//							//RMI- BID_PLACED
-//							Timestamp logoutTimestamp = new Timestamp(System.currentTimeMillis());
-//							long timestamp = logoutTimestamp.getTime();
-//							try {
-//								mClientHandler.processEvent(new BidEvent(BidEvent.BID_OVERBID, timestamp, biddingUser.getName(), auctionID, amount));
-//							} catch (RemoteException e) {
-//								logger.error("Failed to connect to the Analytics Server");
-//							} catch (WrongEventTypeException e) {
-//								logger.error("Wrong type of event");
-//							}
-//
-//							String msg = "!new-bid " + auction.getDescribtion();
-//							// send UDP- notofication that he has been oberbidden if he is online
-//							if (oldHighestBidder.isOnline()) {
-//								try {
-//									AuctionServer_UDPSocket.getInstamce().sendMessage(oldHighestBidder.getInternetAdress(), oldHighestBidder.getUdpPort(), msg);
-//								} catch (IOException e) {
-//									System.out.println("Error: Trying to send UDP- Message to unknown user");
-//								}
-//							} else {
-//								// if he is not online store the notification
-//								oldHighestBidder.storeNotification(msg);
-//							}
-//						} else {
-//							//RMI- BID_PLACED
-//							Timestamp logoutTimestamp = new Timestamp(System.currentTimeMillis());
-//							long timestamp = logoutTimestamp.getTime();
-//							try {
-//								mClientHandler.processEvent(new BidEvent(BidEvent.BID_PLACED, timestamp, biddingUser.getName(), auctionID, amount));
-//							} catch (RemoteException e) {
-//								logger.error("Failed to connect to the Analytics Server");
-//							} catch (WrongEventTypeException e) {
-//								logger.error("Wrong type of event");
-//							}
-//						}
-//						// -- END --
-
-						logger.info(biddingUser.getName() + " bid  " + printHighestAmount(amount) + " for the group on " + auction.getDescribtion() + " " + auction.getId());
-					} else logger.debug("Second confirmer: " + confirmer);
+						logger.debug("Initial confirmer: " + confirmer.getName());
+						synchronized (syncAuctionList) {
+							bid.execute(mClientHandler);
+						}
+						syncGroupBids.remove(key);
+					} else logger.debug("Second confirmer: " + confirmer.getName());
 					return "!confirmed";
 
-				}
+				//}
 			} else {
+				// need the followin line for the case, that A bids too soon and
+				// therefore the case is: amount == auction.getHighestAmount()
+				if (bid.executed()) return "!confirmed";
 				return "!rejected amount not high enough";
 			}
 		}
