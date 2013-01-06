@@ -3,10 +3,12 @@ package client;
 public class OnlineUser {
 	private String ip = "";
 	private int port = 0;
+	private String name;
 	
-	public OnlineUser(String ip, int port) {
+	public OnlineUser(String ip, int port, String name) {
 		this.ip = ip;
 		this.port = port;
+		this.name = name;
 	}
 	
 	public String getIP() {
@@ -15,5 +17,9 @@ public class OnlineUser {
 	
 	public int getPort() {
 		return port;
+	}
+	
+	public String getName() {
+		return name;
 	}
 }

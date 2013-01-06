@@ -22,6 +22,7 @@
     <property name="client1.port" value="10721"/><!-- UDP port (and TCP port for assignment 3!) of 1st Bidding Client -->
     <property name="client2.port" value="10722"/><!-- UDP port (and TCP port for assignment 3!) of 2nd Bidding Client -->
     <property name="client3.port" value="10723"/><!-- UDP port (and TCP port for assignment 3!) of 3rd Bidding Client -->
+	<property name="client4.port" value="10724"/><!-- UDP port (and TCP port for assignment 3!) of 3rd Bidding Client -->
 
     <path id="project.classpath">
 	<fileset dir="${lib.dir}">
@@ -103,6 +104,17 @@
         </java>
     </target>
 
+	<target name="run-client4" depends="compile" description="Run 4th Client.">
+	        <java classname="${client.name}" fork="true" classpathref="project.classpath">
+	            <assertions refid="project.assertions"/>
+	            <arg value="${server.host}"/>
+	            <arg value="${server.port}"/>
+	            <arg value="${client4.port}"/>
+	            <arg value="${server.key.pub}"/>
+	            <arg value="${clients.key.dir}"/>
+	        </java>
+	    </target>
+	
     <target name="run-mgmtclient1" depends="compile" description="Run Management Client 1.">
         <java classname="${mgmtclient.name}" fork="true" classpathref="project.classpath">
             <assertions refid="project.assertions"/>

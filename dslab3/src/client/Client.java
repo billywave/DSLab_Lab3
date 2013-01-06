@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import loadTestingComponent.LoadTestClient;
 
@@ -30,7 +32,7 @@ public class Client {
 	int tcpPort;
 	int udpPort;
 	
-	ArrayList<OnlineUser> onlineUsers = new ArrayList<OnlineUser>();
+	List<OnlineUser> onlineUsers = new ArrayList<OnlineUser>();
 	
 	boolean ioNotFound = false;
 	boolean isTestingClient = false;
@@ -136,10 +138,12 @@ public class Client {
 							onlineUsers.clear();
 							for (int i = 0; i < userArray.length; i++) {
 								String[] inetAddress_name = userArray[i].split(" ");
+								String name = inetAddress_name[2];
+	    	    				logger.debug("name "+name);
 								String[] ip_portArray = inetAddress_name[0].split(":");
 								if (ip_portArray.length >= 2) {
 //									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
-									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1])));
+									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1]), name));
 								}
 							}
 						}
@@ -152,10 +156,12 @@ public class Client {
 	    	    			String[] userArray = incommingMessage.substring(7).split("\n");
 	    	    			for (int i = 0; i < userArray.length; i++) {
 	    	    				String[] inetAddress_name = userArray[i].split(" ");
+	    	    				String name = inetAddress_name[2];
+	    	    				logger.debug("name "+name);
 								String[] ip_portArray = inetAddress_name[0].split(":");
 								if (ip_portArray.length >= 2) {
 //									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
-									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1])));
+									onlineUsers.add(new OnlineUser(ip_portArray[0],Integer.parseInt(ip_portArray[1]), name));
 								}
 	    	    			}
 	    	    			logger.debug("currently are " + onlineUsers.size() + " users online");
@@ -241,8 +247,8 @@ public class Client {
 		}
 	}
 	
-	public synchronized ArrayList getOnlineUsers() {
-		return this.onlineUsers;
+	public synchronized List<OnlineUser> getOnlineUsers() {
+		return onlineUsers;
 	}
 	
 	/**

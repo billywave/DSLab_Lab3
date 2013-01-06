@@ -6,6 +6,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +30,7 @@ public class ClientCommandListener implements Runnable {
 
 	Client client;
 	boolean serverIsOnline = true;
+	final List<String> offlineBidList = Collections.synchronizedList(new ArrayList<String>());
 	
 	public ClientCommandListener(Channel serverChannel, int udpPort, Client client) {
 		//this.socket = socket;
@@ -142,6 +147,19 @@ public class ClientCommandListener implements Runnable {
 				// obtain list of other users
 				serverChannel.println("!getFirstClientList");
 				serverChannel.flush();
+				
+				/* send offline bids if any */
+	        	if (!offlineBidList.isEmpty()) {
+	        		Iterator<String> iterator = offlineBidList.iterator();
+	        		synchronized (offlineBidList) {
+						while (iterator.hasNext()) {
+							String msg = iterator.next();
+							logger.debug("sending msg: " + msg + "to the Auction Server");
+							serverChannel.println(msg);
+							serverChannel.flush();
+						}
+					}
+	        	}
 			} 
 			else if (commandArray.length > 0 && commandArray[0].equals("!bid") && !serverIsOnline) {
 				logger.debug("trying to get signed timestamp");
@@ -167,9 +185,32 @@ public class ClientCommandListener implements Runnable {
 					signer1 = client.onlineUsers.get(random1);
 					signer2 = client.onlineUsers.get(random2);
 					
+					/* format of signed bid: !signedBid 17 90 Bob:<timestamp1>:<signature1> Carl:<timestamp2>:<signature2> */
+					String auctionID = commandArray[1];
+					String price = commandArray[2];
+					String signedTimestamp1 = "";
+					String signedTimestamp2 = "";
+					
 					if (commandArray.length <= 3) {
-						reiciveSignedTimestamp(signer1, commandArray);
-						reiciveSignedTimestamp(signer2, commandArray);
+						signedTimestamp1 = reiciveSignedTimestamp(signer1, commandArray);
+						signedTimestamp2 = reiciveSignedTimestamp(signer2, commandArray);
+						
+						String[] signedArray1 = signedTimestamp1.split(" ");
+						String[] signedArray2 = signedTimestamp2.split(" ");
+						
+						String actalTimestamp1 = signedArray1[3];
+						String actalTimestamp2 = signedArray2[3];
+						
+						String signature1 = signedArray1[4];
+						String signature2 = signedArray2[4];
+						
+						String signedBid = "!signedBid " + auctionID + " " + price + " " + 
+								signer1.getName() + ":" + actalTimestamp1 + ":" + signature1 + " " + 
+								signer2.getName() + ":" + actalTimestamp2 + ":" + signature2;
+						offlineBidList.add(signedBid);
+						
+						logger.debug("Created signed bid and stored it in List");
+						
 					}
 					
 				}
@@ -183,6 +224,14 @@ public class ClientCommandListener implements Runnable {
 		
 	}
 
+	/**
+	 * get timestamp from signer which is formated like:
+	 * "!timestamp <auctionID> <price> <timestamp> <signature>"
+	 * 
+	 * @param signer
+	 * @param commandArray
+	 * @return "!timestamp <auctionID> <price> <timestamp> <signature>"
+	 */
 	private String reiciveSignedTimestamp(OnlineUser signer, String[] commandArray) {
 		PrintWriter out = null;
         BufferedReader in = null;
@@ -207,7 +256,7 @@ public class ClientCommandListener implements Runnable {
 		out.flush();
 		try {
 			signedAnswer = in.readLine();
-			logger.debug("got signed answer: " + signedAnswer);
+			logger.debug("got signed answer");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
