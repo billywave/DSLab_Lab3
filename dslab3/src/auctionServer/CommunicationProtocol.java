@@ -1,17 +1,30 @@
 package auctionServer;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.sql.Timestamp;
 
 import org.apache.log4j.Logger;
+import org.bouncycastle.openssl.PEMReader;
 
 import rmi_Interfaces.BillingServerSecure_RO;
 import rmi_Interfaces.BillingServer_RO;
 import rmi_Interfaces.MClientHandler_RO;
+
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
+
 import event.AuctionEvent;
 import event.UserEvent;
 import exceptions.WrongEventTypeException;
@@ -438,11 +451,112 @@ public class CommunicationProtocol {
 			logger.warn("Failed to bill auction: No connection to the billing server");
 	}
 
+	/**
+	 * Receive a signed bid because the server went offline and online again
+	 * the signed bid should be formated like this:
+	 * !signedBid 17 90 Bob:<timestamp1>:<signature1> Carl:<timestamp2>:<signature2>
+	 * 
+	 * then do the following things:
+	 * 1) recreate the two !timestamp <auctionID> <price> <timestamp> statements and test them 
+	 * against the signature.
+	 * 
+	 * 2) if they match determine the arithmetic mean of the two timestamps and create a bid
+	 * 
+	 * 3) if the bid has been closed while the server was offline decide who is the winner in 
+	 *    compliance on whether the bid was created until the auction would have been online or not
+	 * 
+	 * @return
+	 */
 	private String determineSignedBid() {
-		// TODO Alex- fill id
-		return null;
+		String[] timestampPart1 = stringParts[3].split(":");
+		String[] timestampPart2 = stringParts[4].split(":");
+		
+		String signature1Base64 = timestampPart1[2];
+		String signature2Base64 = timestampPart2[2];
+		
+		String signer1Name = timestampPart1[0];
+		String signer2Name = timestampPart2[0];
+		
+		String signedMessage1 = "!timestamp " + stringParts[1] + " "
+				+ stringParts[2] + " " + timestampPart1[1];
+
+		String signedMessage2 = "!timestamp " + stringParts[1] + " "
+				+ stringParts[2] + " " + timestampPart2[1];
+		
+		boolean verifySignature1 = verifySignedMessage(signedMessage1, signer1Name, signature1Base64);
+		boolean verifySignature2 = verifySignedMessage(signedMessage2, signer2Name, signature2Base64);
+		
+		if (verifySignature1 && verifySignature2) {
+			return "Verifikation of the bid was successfull!";
+		}
+		
+		return "Error: The signature of the bid could not be verified!";
 	}
 
+	/**
+	 * actual verification of the signature
+	 * 
+	 * @param message
+	 * @param signerName
+	 * @param signature_Base64encoded
+	 * @return true if the signature is correct
+	 */
+	private boolean verifySignedMessage(String message, String signerName, String signature_Base64encoded) {
+		byte[] signature1Decoded = null;
+		
+		try {
+			signature1Decoded = Base64.decode(signature_Base64encoded);
+		} catch (Base64DecodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		Signature signature = null;
+		try {
+			signature = Signature.getInstance("SHA512withRSA");
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		/* Initializing the object with the public key */
+		PublicKey publicKey = readPublicKey(signerName);
+		try {
+			signature.initVerify(publicKey);
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		/* Update and verify the data */
+		boolean verifies = false;
+		try {
+			signature.update(message.getBytes());
+			verifies = signature.verify(signature1Decoded);
+			logger.info("signature from " + signerName + " verifies: " + verifies);
+			if (!verifies) logger.debug("message: " + message);
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return verifies;
+	}
+	
+	/**
+	 * Reads the public key of a given user
+	 * @param user 
+	 */
+	public static PublicKey readPublicKey(String user) {
+		try {
+			logger.debug("reading public key from user: " + user);
+			PEMReader in = new PEMReader(new FileReader("keys/" + user + ".pub.pem"));
+			return (PublicKey) in.readObject();
+		} catch (FileNotFoundException e) {
+			logger.error("Public Key File Not Found");
+		} catch (IOException ex) {}
+		return null;
+	}
+	
 	public void shutdown() {
 		/*
     	try {

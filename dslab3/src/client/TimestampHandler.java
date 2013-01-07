@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -13,10 +12,9 @@ import java.security.Signature;
 import java.security.SignatureException;
 
 import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
 
 import security.RSAChannel;
-
-import org.bouncycastle.util.encoders.Base64;
 
 public class TimestampHandler implements Runnable {
 
@@ -75,7 +73,7 @@ public class TimestampHandler implements Runnable {
 				logger.error("got wrong formated timestamp- request");
 				return "wrong request format";
 			} else {
-				tmpAnswer = "timestamp " + splitInput[1] + " " + splitInput[2]  + " " + Long.toString(System.currentTimeMillis());
+				tmpAnswer = "!timestamp " + splitInput[1] + " " + splitInput[2]  + " " + Long.toString(System.currentTimeMillis());
 				
 				// sign the answer
 				Signature signature = null;
@@ -95,6 +93,7 @@ public class TimestampHandler implements Runnable {
 					signature.initSign(privateKey);
 					/* Update and sign the data */
 					signature.update(tmpAnswer.getBytes());
+					
 					byte[] signatureArray = signature.sign();
 					tmpAnswer = tmpAnswer + " " + new String(Base64.encode(signatureArray));
 				} catch (InvalidKeyException e) {

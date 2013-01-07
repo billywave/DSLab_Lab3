@@ -149,7 +149,7 @@ public class ClientCommandListener implements Runnable {
 				serverChannel.flush();
 				
 				/* send offline bids if any */
-	        	if (!offlineBidList.isEmpty()) {
+	        	if (serverIsOnline && !offlineBidList.isEmpty()) {
 	        		Iterator<String> iterator = offlineBidList.iterator();
 	        		synchronized (offlineBidList) {
 						while (iterator.hasNext()) {
@@ -158,14 +158,15 @@ public class ClientCommandListener implements Runnable {
 							serverChannel.println(msg);
 							serverChannel.flush();
 						}
+						offlineBidList.clear();
 					}
 	        	}
 			} 
 			else if (commandArray.length > 0 && commandArray[0].equals("!bid") && !serverIsOnline) {
 				logger.debug("trying to get signed timestamp");
 				
-				// request a signed timestamp from 2 online clients
-				if (client.onlineUsers.size() < 1) {
+				// request a signed timestamp from 2 online clients- if at least 2 others (+yourself) are online
+				if (client.onlineUsers.size() <= 2) {
 					logger.error("Bid cannot be signed- too less users are online");
 				} else {
 					Random randomGenerator = new Random();
@@ -178,7 +179,11 @@ public class ClientCommandListener implements Runnable {
 					while (random2 < 0 || random1 == random2) {
 						random2 = randomGenerator.nextInt(client.onlineUsers.size()-1);
 						signer2 = client.onlineUsers.get(random2);
+						
+						logger.debug("Debugging why client picks itself: \n\n" + "UDP- Port:    " + udpPort + "\nSigner Port: " + signer2.getPort());
+						
 						if (signer2.getPort() == udpPort) {   // himself -> search goes on
+							logger.debug("random algorithm picked itself as a signer, try once more");
 							random2 = -1;
 						}
 					}
@@ -272,4 +277,7 @@ public class ClientCommandListener implements Runnable {
 		ClientCommandListener.exit = true;
 	}
 
+	public void setServerIsOnline(boolean isonline) {
+		this.serverIsOnline = isonline;
+	}
 }

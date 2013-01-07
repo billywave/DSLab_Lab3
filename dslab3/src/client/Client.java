@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import loadTestingComponent.LoadTestClient;
@@ -139,7 +138,6 @@ public class Client {
 							for (int i = 0; i < userArray.length; i++) {
 								String[] inetAddress_name = userArray[i].split(" ");
 								String name = inetAddress_name[2];
-	    	    				logger.debug("name "+name);
 								String[] ip_portArray = inetAddress_name[0].split(":");
 								if (ip_portArray.length >= 2) {
 //									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
@@ -157,7 +155,6 @@ public class Client {
 	    	    			for (int i = 0; i < userArray.length; i++) {
 	    	    				String[] inetAddress_name = userArray[i].split(" ");
 	    	    				String name = inetAddress_name[2];
-	    	    				logger.debug("name "+name);
 								String[] ip_portArray = inetAddress_name[0].split(":");
 								if (ip_portArray.length >= 2) {
 //									logger.debug("saving: " + ip_portArray[0] + ":" + Integer.parseInt(ip_portArray[1]));
@@ -204,6 +201,7 @@ public class Client {
         						serverChannel = new SecureClientChannel(socket);
         						auctionServerIsOnline = true;
         						commandListener.setServerChannel(serverChannel);
+        						commandListener.setServerIsOnline(true);
         						logger.info("The Aucitonserver just went online again. Please log in again!");
         						listenToAuctionServer();
         					} catch (UnknownHostException e1) {
