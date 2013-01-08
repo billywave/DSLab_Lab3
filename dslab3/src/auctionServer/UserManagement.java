@@ -1,6 +1,5 @@
 package auctionServer;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.sql.Timestamp;
@@ -10,12 +9,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 
-import event.BidEvent;
-import exceptions.WrongEventTypeException;
-import java.util.*;
 import org.apache.log4j.Logger;
 
 import rmi_Interfaces.MClientHandler_RO;
+import event.BidEvent;
+import exceptions.WrongEventTypeException;
 
 public class UserManagement {
 	private static Logger logger = Logger.getLogger(UserManagement.class);
@@ -171,6 +169,7 @@ public class UserManagement {
 			while (iterator.hasNext()) {
 				auction = iterator.next();
 				if (auction.getId() == auctionID) {
+					logger.debug("found auction in the syncAuctionList");
 					if (amount > auction.getHightestAmount()) {
 						User oldHighestBidder = auction.getHighestBidder();
 						
@@ -188,6 +187,8 @@ public class UserManagement {
 								logger.error("Failed to connect to the Analytics Server");
 							} catch (WrongEventTypeException e) {
 								logger.error("Wrong type of event");
+							} catch (NullPointerException e) {
+								logger.error("Remote Object is null");
 							}
 							
 							String msg = "!new-bid " + auction.getDescribtion();
@@ -216,6 +217,8 @@ public class UserManagement {
 								logger.error("Failed to connect to the Analytics Server");
 							} catch (WrongEventTypeException e) {
 								logger.error("Wrong type of event");
+							} catch (NullPointerException e) {
+								logger.error("Remote Object is null");
 							}
 						}
 						logger.info(user.getName() + " bid  " + printHighestAmount(amount) + " on " + auction.getDescribtion() + " " + auction.getId());
@@ -235,19 +238,26 @@ public class UserManagement {
 	}
 	
 	public String signedBidForAuction(int auctionID, double amount, User user, Timestamp timestamp) {
-		Iterator<Auction> iterator = syncAuctionList.iterator();
-		while (iterator.hasNext()) {
-			Auction auction = iterator.next();
-			if (auction.getId() == auctionID && amount > auction.getHightestAmount() && 
-					timestamp.before(new Timestamp(auction.getStartedTimestamp()+auction.getSpareDuration())) &&
-					timestamp.after(new Timestamp(auction.getStartedTimestamp()))) {
-				
-				auction.setHightestAmount(amount);
-				auction.setHighestBidder(user);
-				
-				logger.debug("bidding for signed auciton");
-				return "You successfully bid with " + auction.getHightestAmount() + " on '" + auction.getDescribtion() + 
-						"'. Current highest bid is " + auction.getHightestAmount() + ".";
+		synchronized (syncAuctionList) {
+			Iterator<Auction> iterator = syncAuctionList.iterator();
+			while (iterator.hasNext()) {
+				Auction auction = iterator.next();
+				if (auction.getId() == auctionID
+						&& amount > auction.getHightestAmount()
+						&& timestamp.before(new Timestamp(auction.getStartedTimestamp()
+								+ auction.getSpareDuration()))
+						&& timestamp.after(new Timestamp(auction.getStartedTimestamp()))) {
+
+					auction.setHightestAmount(amount);
+					auction.setHighestBidder(user);
+
+					logger.debug("bidding for signed auciton");
+					return "You successfully bid with "
+							+ auction.getHightestAmount() + " on '"
+							+ auction.getDescribtion()
+							+ "'. Current highest bid is "
+							+ auction.getHightestAmount() + ".";
+				}
 			}
 		}
 		return "Bidding was not successful: either your amount was not the hightest or the auction already was closed.";
@@ -400,46 +410,44 @@ public class UserManagement {
 	 * if auction server comes back in Lab3- Stage4, aucitons which should be running
 	 * are reset active.
 	 */
-	public void resetAuctions() {
+	public synchronized void resetAuctions() {
 		synchronized (syncAuctionList) {
-			Iterator<Auction> iterator = syncAuctionList.iterator();
-			while (iterator.hasNext()) {
-				Auction auction = iterator.next();
-				
-				// if there is some time left -> restart the auction
-				if (new Timestamp(auction.getInterruptedTimestamp()
-						+ auction.getSpareDuration()).after(new Timestamp(
-						System.currentTimeMillis()))) {
+				for (int i = 0; i < syncAuctionList.size(); i++) {
+					Auction auction = syncAuctionList.get(i);
 					
-					auction.setActive(true);
-					long newDurationSec = (auction.getDurationSec() * 1000 - (System
-							.currentTimeMillis() - auction
-							.getInterruptedTimestamp())) / 1000;
-					logger.debug("set spare Duration to: " + (newDurationSec)
-							+ " Seconds");
+					// if there is some time left -> restart the auction
+					if (new Timestamp(auction.getInterruptedTimestamp()
+							+ auction.getSpareDuration()).after(new Timestamp(
+							System.currentTimeMillis()))) {
+						
+						auction.setActive(true);
+						long newDurationSec = (auction.getDurationSec() * 1000 - (System.currentTimeMillis() - 
+								auction.getInterruptedTimestamp())) / 1000;
+						logger.debug("set spare Duration to: " + (newDurationSec)
+								+ " Seconds");
 
-					auction.setDurationSec((int) newDurationSec);
+						auction.setDurationSec((int) newDurationSec);
 
-					Auction newAuction = new Auction(auction);
-					newAuction.setActive(true);
+						Auction newAuction = new Auction(auction);
+						newAuction.setActive(true);
 
-					syncAuctionList.remove(auction);
-					syncAuctionList.add(newAuction);
+						syncAuctionList.remove(auction);
+						syncAuctionList.add(newAuction);
 
-					try {
-						logger.debug("new Auction got started with "
-								+ newDurationSec + " seconds duration");
+						try {
+							logger.debug("new Auction got started with "
+									+ newDurationSec + " seconds duration");
 
-						timer.schedule(newAuction,
-								newAuction.durationSec * 1000);
-					} catch (IllegalStateException e) {
-						logger.warn("timer was cancelt - restarting timer");
-						timer = new Timer();
-						timer.schedule(newAuction,
-								newAuction.durationSec * 1000);
+							timer.schedule(newAuction,
+									newAuction.durationSec * 1000);
+						} catch (IllegalStateException e) {
+							logger.warn("timer was cancelt - restarting timer");
+							timer = new Timer();
+							timer.schedule(newAuction,
+									newAuction.durationSec * 1000);
+						}
 					}
 				}
-			}
 		}
 	}
 	

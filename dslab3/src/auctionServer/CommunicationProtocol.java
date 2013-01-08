@@ -14,22 +14,17 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.sql.Timestamp;
-import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.util.encoders.Base64;
 
 import rmi_Interfaces.BillingServerSecure_RO;
 import rmi_Interfaces.BillingServer_RO;
 import rmi_Interfaces.MClientHandler_RO;
-
-//import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
-//import com.sun.org.apache.xml.internal.security.utils.Base64;
-
 import event.AuctionEvent;
 import event.UserEvent;
 import exceptions.WrongEventTypeException;
-import org.bouncycastle.util.encoders.Base64;
 
 /**
  * protocoll for interprating the clients Message
@@ -290,7 +285,9 @@ public class CommunicationProtocol {
 	 * @return answer as in assignement
 	 */
 	private String bidForAuction() {
+		logger.debug("reicieving bid command and process it in CommunicationProtocol");
 		if (user.isOnline()) {
+			logger.debug("bidding user is online");
 			int auctionID = 0;
 			double amount = 0.0;
 			

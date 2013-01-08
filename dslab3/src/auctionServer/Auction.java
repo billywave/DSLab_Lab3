@@ -247,6 +247,8 @@ public class Auction extends TimerTask {
 					mClientHandler.processEvent(new BidEvent(BidEvent.BID_WON, timestamp, getHighestBidder().getName(), id, hightestAmount));
 				} catch (WrongEventTypeException e) {
 					// wont happen
+				} catch (NullPointerException e) {
+					logger.error("Remote Object is null");
 				}
 
 				// bill auction on the billing server

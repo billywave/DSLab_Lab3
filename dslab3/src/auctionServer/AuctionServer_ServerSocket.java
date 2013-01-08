@@ -102,7 +102,6 @@ public class AuctionServer_ServerSocket implements Runnable {
 	 */
 	public void openSocket() {
 		logger.info("opening the ServerSocket");
-		
 		AuctionServer_ServerSocket.listening = true;
 	}
 }

@@ -156,8 +156,7 @@ public class ClientHandler implements Runnable {
 			socket.close();
 			userManagement.getTimer().cancel();
 		} catch (IOException e) {
-			System.out
-					.println("Error: shutting down the ClientHandler failed!");
+			System.out.println("Error: shutting down the ClientHandler failed!");
 		} catch (NullPointerException e) {
 			// timer was not instancated
 		}
@@ -171,14 +170,16 @@ public class ClientHandler implements Runnable {
 		try {
 			clientChannel.close();
 			socket.close();
-			Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
-			while (iterator.hasNext()) {
-				Auction auction = iterator.next();
-				long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
-				auction.setInterruptedTimestamp(System.currentTimeMillis());
-				auction.setSpareDuration(spare);
-				auction.setActive(false);
-				auction.cancel();
+			synchronized (userManagement.syncAuctionList) {
+				Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
+				while (iterator.hasNext()) {
+					Auction auction = iterator.next();
+					long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
+					auction.setInterruptedTimestamp(System.currentTimeMillis());
+					auction.setSpareDuration(spare);
+					auction.setActive(false);
+					auction.cancel();
+				}
 			}
 		} catch (IOException e) {
 		System.out.println("Error: shutting down the ClientHandler failed!");
