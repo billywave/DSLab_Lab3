@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.TimerTask;
 
+import org.apache.log4j.Logger;
+
 import rmi_Interfaces.MClientHandler_RO;
 import event.AuctionEvent;
 import event.BidEvent;
@@ -18,6 +20,8 @@ import exceptions.WrongEventTypeException;
  */
 public class Auction extends TimerTask {
 
+	private static Logger logger = Logger.getLogger(Auction.class);
+	
 	final int id = createId();
 	static int ID_COUNTER = 0;
 	int durationSec = 0;
@@ -25,6 +29,7 @@ public class Auction extends TimerTask {
 	int udpPort = 0;
 	Calendar c;
 	String endOfAuctionTimestamp = "";
+	long endOfAuctionLongTimestamp = 0;
 	String describtion = "";
 	User owner = null;
 	User highestBidder = null;
@@ -32,6 +37,10 @@ public class Auction extends TimerTask {
 	//RMI
 	MClientHandler_RO mClientHandler = null;
 
+	// Server- outage
+	long spareDuration = 0;
+	private boolean active = true;
+	
 	/**
 	 * Constructor
 	 *
@@ -55,6 +64,7 @@ public class Auction extends TimerTask {
 		c = Calendar.getInstance();
 		c.getTime();
 		c.setTimeInMillis((c.getTimeInMillis() + durationSec * 1000));
+		endOfAuctionLongTimestamp = c.getTimeInMillis();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		endOfAuctionTimestamp = sdf.format(c.getTime());
 	}
@@ -113,6 +123,27 @@ public class Auction extends TimerTask {
 
 	public String getEndOfAuctionTimestamp() {
 		return endOfAuctionTimestamp;
+	}
+
+	public long getEndOnAucionLongTimestamp() {
+		return endOfAuctionLongTimestamp;
+	}
+	
+	public long getSpareDuration() {
+		return spareDuration;
+	}
+
+	public void setSpareDuration(long spareDuration) {
+		logger.debug("setting spareDuration to " + spareDuration/1000 + "sec");
+		this.spareDuration = spareDuration;
+	}
+	
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	public String printHighestAmount() {
@@ -175,6 +206,8 @@ public class Auction extends TimerTask {
 				mClientHandler.processEvent(new AuctionEvent(AuctionEvent.AUCTION_ENDED, timestamp, this.id, durationSec, highestBidder.getName()));
 			} catch (WrongEventTypeException e) {
 				// wont happen
+			} catch (NullPointerException e) {
+				logger.error("Remote Object is null");
 			}
 
 			synchronized (userManagement.syncAuctionList) {

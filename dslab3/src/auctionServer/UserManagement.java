@@ -133,7 +133,7 @@ public class UserManagement {
 	}
 	
 	public String getAuctions() {
-		String auctions = "";
+		String auctions = "There are no auctions active!";
 		
 		synchronized (syncAuctionList) {
 			Iterator<Auction> iterator = syncAuctionList.iterator();
@@ -145,13 +145,15 @@ public class UserManagement {
 			}
 			while (iterator.hasNext()) {
 				auction = iterator.next();
-				
+				if (auction.isActive()) {
+				if (auctions.equals("There are no auctions active!")) auctions = "";
 				auctions += (i + ". " + " Auction ID: " + auction.getId() + 
-						"\n   " + auction.getDescribtion() + " - created by: " + auction.getOwner().getName() + 
+						"\n    " + auction.getDescribtion() + " - created by: " + auction.getOwner().getName() + 
 						"\n    Current highest bid: " + auction.printHighestAmount() + " by: " + auction.getHighestBidder().getName() + 
 						"\n    ends at: " + auction.getEndOfAuctionTimestamp() + 
 						"\n----------------------------------------------\n\n");
 				i++;
+				}
 			}
 		}
 		return auctions;
@@ -226,6 +228,10 @@ public class UserManagement {
 		}
 		
 		return answer;
+	}
+	
+	public String signedBidForAuction(int aucitonID, double amount, User user) {
+		return null;
 	}
 	
 	/**

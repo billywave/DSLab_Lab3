@@ -14,6 +14,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.sql.Timestamp;
+import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.bouncycastle.openssl.PEMReader;
@@ -487,6 +488,17 @@ public class CommunicationProtocol {
 		boolean verifySignature2 = verifySignedMessage(signedMessage2, signer2Name, signature2Base64);
 		
 		if (verifySignature1 && verifySignature2) {
+			logger.info("Verifikation of the bid was successfull!");
+			
+			int auctionID = Integer.parseInt(stringParts[1]);
+			double price = Double.parseDouble(stringParts[2]);
+			price = (double)(Math.round(price*100))/100;
+			
+			if (price <= 0 ) {
+				return "Error: The amount has to be > 0!";
+			}
+			signedBidForAuctions(auctionID, price, new Timestamp(Long.parseLong(timestampPart1[1])));
+			
 			return "Verifikation of the bid was successfull!";
 		}
 		
@@ -540,6 +552,28 @@ public class CommunicationProtocol {
 			e.printStackTrace();
 		}
 		return verifies;
+	}
+	
+	/**
+	 * work of missed bids.
+	 * therefore search for the highest amount in the valid timelaps
+	 * 
+	 * @param auctionID
+	 * @param price
+	 * @param timestamp
+	 * @return
+	 */
+	private String signedBidForAuctions(int auctionID, double price, Timestamp timestamp) {
+		
+		Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
+		while (iterator.hasNext()) {
+			Auction auction = iterator.next();
+			if (auction.getId() == auctionID) {
+				// TODO Alex: new funktion: userManagement.signedBidForAuciton
+				
+			}
+		}
+		return null;
 	}
 	
 	/**

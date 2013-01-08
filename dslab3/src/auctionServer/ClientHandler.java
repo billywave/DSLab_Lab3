@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
+import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
@@ -145,20 +146,16 @@ public class ClientHandler implements Runnable {
 	}
 
 	public void shutdown() {
-		//if (protocol.isOnline()) {
-			clientChannel.println("shutdownServer");
-			clientChannel.flush();
-		//} else {
-		//	clientChannel.println("Sorry, the Server just went offline. "
-		//			+ "For re- establishing the conneciton please contact the Server- crew and restart the Client!");
-		//}
-		//out.close();
+		clientChannel.println("shutdownServer");
+		clientChannel.flush();
+
 		try {
 			clientChannel.close();
 			socket.close();
 			userManagement.getTimer().cancel();
 		} catch (IOException e) {
-			System.out.println("Error: shutting down the ClientHandler failed!");
+			System.out
+					.println("Error: shutting down the ClientHandler failed!");
 		} catch (NullPointerException e) {
 			// timer was not instancated
 		}
@@ -172,6 +169,14 @@ public class ClientHandler implements Runnable {
 		try {
 			clientChannel.close();
 			socket.close();
+			Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
+			while (iterator.hasNext()) {
+				Auction auction = iterator.next();
+				long spare = (auction.getEndOnAucionLongTimestamp()-System.currentTimeMillis());
+				auction.setSpareDuration(spare);
+				auction.setActive(false);
+				auction.cancel();
+			}
 		} catch (IOException e) {
 		System.out.println("Error: shutting down the ClientHandler failed!");
 		} catch (NullPointerException e) {
