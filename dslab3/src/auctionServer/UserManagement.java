@@ -266,14 +266,12 @@ public class UserManagement {
 		Iterator<Auction> iterator = syncAuctionList.iterator();
 		Auction auction;
 		
-		int sumA = Groupbid.sumActiveAuctionsWithGroupBids();
-		int sumU = this.getAmountUsers();
-		
-
 		while (iterator.hasNext()) {
 			auction = iterator.next();
 			if (auction.getId() == auctionID) {
-				if (sumA > sumU || (sumA == sumU && !Groupbid.hasGroupBid(auction))) {
+				if (!Groupbid.groupBidAllowed(auction, getAmountUsers())) {
+					Groupbid.deniedRequest(user, timer);
+					
 					return "The number of active auctions with group bids must be less than or equal to the number of group members";
 				}
 				

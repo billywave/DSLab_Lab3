@@ -22,6 +22,9 @@ public class Groupbid {
 	private final static Set<Auction> activeAuctionsWithGroupBids = Collections.synchronizedSet(new HashSet<Auction>());
 	private final static Set<Groupbid> syncBlockingGroupBids = Collections.synchronizedSet(new HashSet<Groupbid>());
 	
+	// starvation
+	private final static Map<User, Integer> groupBidDenials = Collections.synchronizedMap(new HashMap<User, Integer>());
+	
 	private User bidder;
 	private Set<User> confirmers = Collections.synchronizedSet(new HashSet<User>());
 	private User initialConfirmer;
@@ -34,6 +37,19 @@ public class Groupbid {
 		this.auction = auction;
 		this.amount = amount;
 		this.bidder = bidder;
+	}
+	
+	public static boolean groupBidAllowed(Auction auction, int amountUsers) {
+		int sumA = Groupbid.sumActiveAuctionsWithGroupBids();
+		return sumA > amountUsers || (sumA == amountUsers && !Groupbid.hasGroupBid(auction));
+	}
+	
+	public static void deniedRequest(User user, Timer timer) {
+		try {
+			timer.schedule(new GroupBidDenial(user), 20000);
+		} catch (IllegalStateException e) {
+			Logger.getLogger(Groupbid.class).warn("timer is already cancelt");
+		}
 	}
 	
 	public void addGroupBid() {

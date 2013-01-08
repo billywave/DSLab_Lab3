@@ -105,7 +105,7 @@ public class CommunicationProtocol {
 		stringParts = input.split(" ");
 		
 		try {
-			cmdPart = stringParts[0];
+			if (stringParts.length > 0) cmdPart = stringParts[0];
 		} catch (NullPointerException e) {
 			System.out.println("Error: found no Command");
 		}
@@ -238,6 +238,9 @@ public class CommunicationProtocol {
 				}
 				describtion = describtion.substring(1);
 			} catch (ArrayIndexOutOfBoundsException e) {
+				return answer = "Error: Please enter the create command like this: " +
+						"!create <duration> + <describtion>";
+			} catch (StringIndexOutOfBoundsException e) {
 				return answer = "Error: Please enter the create command like this: " +
 						"!create <duration> + <describtion>";
 			} catch (NumberFormatException e) {
