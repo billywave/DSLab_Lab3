@@ -1,19 +1,29 @@
+/*
+ * TODO 
+ * the number of active auctions with group bids is less than or equal 
+ * to the number of group members
+ * 
+ * block client
+ * 
+ * 
+ */
+
 package auctionServer;
 
-import event.BidEvent;
-import exceptions.WrongEventTypeException;
-import java.io.IOException;
-import java.rmi.RemoteException;
-import java.sql.Timestamp;
-import java.util.HashSet;
+import java.util.*;
 import org.apache.log4j.Logger;
 import rmi_Interfaces.MClientHandler_RO;
 
 public class Groupbid {
 	private Logger logger = Logger.getLogger(this.getClass());
 	
+	// String: auctionid + " " + amount + " " + user
+	private final static Map<String, Groupbid> syncGroupBids = Collections.synchronizedMap(new HashMap<String, Groupbid>());
+	private final static Set<Auction> activeAuctionsWithGroupBids = Collections.synchronizedSet(new HashSet<Auction>());
+	private final static Set<Groupbid> syncBlockingGroupBids = Collections.synchronizedSet(new HashSet<Groupbid>());
+	
 	private User bidder;
-	private HashSet<User> confirmers = new HashSet<User>();
+	private Set<User> confirmers = Collections.synchronizedSet(new HashSet<User>());
 	private User initialConfirmer;
 	private double amount;
 //	private int auctionID;
@@ -26,10 +36,40 @@ public class Groupbid {
 		this.bidder = bidder;
 	}
 	
-	public void confirm(User user) {
-		if (initialConfirmer == null) initialConfirmer = user;
-		confirmers.add(user);
-		logger.debug("Groupbid " + amount + " from " + bidder.getName() + " on auction id " + auction.id + " confirmed by " + user.getName());
+	public void addGroupBid() {
+		syncGroupBids.put(auction.id + " " + amount + " " + bidder.getName(), this);
+		activeAuctionsWithGroupBids.add(auction);
+	}
+	
+	public static Groupbid getGroupBid(String key) {
+		if (syncGroupBids.containsKey(key)) return syncGroupBids.get(key);
+		return null;
+	}
+	
+//	public void removeGroupBid(String key) {
+//		if (syncGroupBids.containsKey(key)) {
+//			Auction a = syncGroupBids.get(key).getAuction();
+//			syncGroupBids.remove(key);
+//			
+//			
+//			
+//		} else logger.error("Groupbid not found");
+//	}
+	
+	public boolean confirm(User user, int onlineUsers) {
+		// checking for deadlock prevention
+		if (syncBlockingGroupBids.size()+1 < onlineUsers || syncBlockingGroupBids.contains(this)) {
+			if (initialConfirmer == null) initialConfirmer = user;
+			confirmers.add(user);
+
+			if (confirmers.size() < 2) syncBlockingGroupBids.add(this);
+			else syncBlockingGroupBids.remove(this);
+
+			logger.debug("Groupbid " + amount + " from " + bidder.getName() + " on auction id " + auction.id + " confirmed by " + user.getName());
+			
+			return true;
+		}
+		return false;
 	}
 	
 	public boolean greenlid() {
@@ -93,6 +133,16 @@ public class Groupbid {
 //			}
 			// -- END --
 			
+			syncGroupBids.remove(auction.id + " " + amount + " " + bidder.getName());
+			syncBlockingGroupBids.remove(this);
+			
+			// look for other groupbids on same auction
+			boolean found = false;
+			for (Groupbid gb : syncGroupBids.values()) {
+				if (gb.getAuction() == auction) found = true;
+			}
+			if (!found) activeAuctionsWithGroupBids.remove(auction);
+			
 			logger.debug("Execution finished");
 			executed = true;
 		}
@@ -104,5 +154,21 @@ public class Groupbid {
 	
 	public Auction getAuction() {
 		return this.auction;
+	}
+	
+	public static int sumGroupBids() {
+		return syncGroupBids.size();
+	}
+	
+	public static int sumActiveAuctionsWithGroupBids() {
+		int n = 0;
+		for (Auction a : activeAuctionsWithGroupBids) {
+			if (a.isActive()) n++ ;
+		}
+		return n;
+	}
+	
+	public static boolean hasGroupBid(Auction auction) {
+		return activeAuctionsWithGroupBids.contains(auction);
 	}
 }

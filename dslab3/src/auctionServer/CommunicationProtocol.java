@@ -23,12 +23,13 @@ import rmi_Interfaces.BillingServerSecure_RO;
 import rmi_Interfaces.BillingServer_RO;
 import rmi_Interfaces.MClientHandler_RO;
 
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
+//import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
+//import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 import event.AuctionEvent;
 import event.UserEvent;
 import exceptions.WrongEventTypeException;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * protocoll for interprating the clients Message
@@ -520,12 +521,8 @@ public class CommunicationProtocol {
 	private boolean verifySignedMessage(String message, String signerName, String signature_Base64encoded) {
 		byte[] signature1Decoded = null;
 		
-		try {
-			signature1Decoded = Base64.decode(signature_Base64encoded);
-		} catch (Base64DecodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		signature1Decoded = Base64.decode(signature_Base64encoded);
+		
 		
 		Signature signature = null;
 		try {
@@ -588,6 +585,7 @@ public class CommunicationProtocol {
 	}
 	
 	public void shutdown() {
+		userManagement.shutdown();
 		/*
     	try {
 			registry.unbind(analyticsServerRef);
