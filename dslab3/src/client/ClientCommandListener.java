@@ -27,7 +27,8 @@ public class ClientCommandListener implements Runnable {
 	//PrintWriter out = null;
 	private Channel serverChannel;
 	int udpPort = 0;
-
+	String onlineUserName = "";
+	
 	Client client;
 	boolean serverIsOnline = true;
 	final List<String> offlineBidList = Collections.synchronizedList(new ArrayList<String>());
@@ -132,8 +133,9 @@ public class ClientCommandListener implements Runnable {
 			exit = true;
 		} else {
 			String[] commandArray = userInput.split(" ");
-			if (commandArray.length > 0 && commandArray[0].equals("!login")) {
+			if (commandArray.length > 1 && commandArray[0].equals("!login")) {
 				userInput += " " + udpPort;
+				onlineUserName = commandArray[1];
 				/*
 				try {
 					UDPSocket.username = commandArray[1];
@@ -175,14 +177,19 @@ public class ClientCommandListener implements Runnable {
 					OnlineUser signer1;
 					OnlineUser signer2;
 					
+					// dont pick yourself
+					while (client.onlineUsers.get(random1).getName().equals(onlineUserName)) {
+						random1 = randomGenerator.nextInt(client.onlineUsers.size());
+					}
+					
 					// pick a random second signer which is not the fist and not you self
 					while (random2 < 0 || random1 == random2) {
-						random2 = randomGenerator.nextInt(client.onlineUsers.size()-1);
+						random2 = randomGenerator.nextInt(client.onlineUsers.size());
 						signer2 = client.onlineUsers.get(random2);
 						
-						logger.debug("Debugging why client picks itself: \n\n" + "UDP- Port:    " + udpPort + "\nSigner Port: " + signer2.getPort());
+						logger.debug("Debugging why client picks itself: \n\n" + "My name:    " + onlineUserName + "\nSigner name: " + signer2.getName());
 						
-						if (signer2.getPort() == udpPort) {   // himself -> search goes on
+						if (signer2.getName().equals(onlineUserName)) {   // himself -> search goes on
 							logger.debug("random algorithm picked itself as a signer, try once more");
 							random2 = -1;
 						}
