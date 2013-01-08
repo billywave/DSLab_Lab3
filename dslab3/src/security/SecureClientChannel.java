@@ -38,6 +38,7 @@ public class SecureClientChannel implements Channel {
 	
 	private String loginName = "";
 	private boolean authorized = false;
+	private boolean loginphase = false;
 	private Key sharedKey = null;
 	
 	private String lastSentCommand;
@@ -123,11 +124,12 @@ public class SecureClientChannel implements Channel {
 					aesChannel.setIV(splitLine[4]);
 					logger.debug("Changing channel to AES");
 					channel = aesChannel;
+					authorized = true;
+					loginphase = false;
 
 					channel.println(remoteChallengeB64);
 					channel.flush();
 					logger.debug("Sending Login Message #3: " + remoteChallengeB64);
-					authorized = true;
 					sharedKey = this.readSharedKey(loginName);
 					System.out.println(loginName + " has been successfully authorized");
 					return this.readLine();
@@ -185,6 +187,7 @@ public class SecureClientChannel implements Channel {
 					boolean userFound = setUser(loginName, password);
 					if (userFound) {
 						logger.debug("Sending Login message #1: " + line);
+						loginphase = true;
 						channel.println(line);
 						channel.flush();
 					}
@@ -193,7 +196,7 @@ public class SecureClientChannel implements Channel {
 				}
 
 			} else System.out.println("Please log out first, you are currently logged in as: " + loginName);
-		} else if (splitLine.length == 1 && splitLine[0].equals("!list") && !authorized) {
+		} else if (splitLine.length == 1 && splitLine[0].equals("!list") && !authorized && !loginphase) {
 			rsaChannel.setEncryptedRead(false);
 			tcpChannel.println("!list");
 			tcpChannel.flush();
