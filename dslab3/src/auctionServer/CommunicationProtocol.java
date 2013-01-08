@@ -309,9 +309,11 @@ public class CommunicationProtocol {
 				return "Error: Please enter the bid- command like this: " +
 						"!bid <auction-id> <amount>";
 			}
-			
-			return userManagement.bidForAuction(user, auctionID, amount);
+			String answer = userManagement.bidForAuction(user, auctionID, amount);
+			logger.debug("CommunicationProtocoll returns: " + answer);
+			return answer;
 		}
+		logger.debug("CommunicationProtocoll  returns: You have to log in first!");
 		return "You have to log in first!";
 	}
 	
@@ -497,9 +499,11 @@ public class CommunicationProtocol {
 			if (price <= 0 ) {
 				return "Error: The amount has to be > 0!";
 			}
-			signedBidForAuctions(auctionID, price, new Timestamp(Long.parseLong(timestampPart1[1])));
 			
-			return "Verifikation of the bid was successfull!";
+			// determine arethmetic middle of the two timestamps
+			long middleOfTimestamps = (Long.parseLong(timestampPart1[1]) + Long.parseLong(timestampPart2[1]))/2; 
+			
+			return signedBidForAuctions(auctionID, price, new Timestamp(middleOfTimestamps));
 		}
 		
 		return "Error: The signature of the bid could not be verified!";
@@ -563,17 +567,9 @@ public class CommunicationProtocol {
 	 * @param timestamp
 	 * @return
 	 */
-	private String signedBidForAuctions(int auctionID, double price, Timestamp timestamp) {
+	private String signedBidForAuctions(int auctionID, double amount, Timestamp timestamp) {
 		
-		Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
-		while (iterator.hasNext()) {
-			Auction auction = iterator.next();
-			if (auction.getId() == auctionID) {
-				// TODO Alex: new funktion: userManagement.signedBidForAuciton
-				
-			}
-		}
-		return null;
+		return userManagement.signedBidForAuction(auctionID, amount, user, timestamp);
 	}
 	
 	/**

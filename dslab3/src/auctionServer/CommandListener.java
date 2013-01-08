@@ -64,6 +64,7 @@ public class CommandListener implements Runnable {
 				if (userInput.equals("!open")) {
 					auctionServer_ServerSocket.openSocket();
 					Main_AuctionServer.auctionServerExecutionService.execute(auctionServer_ServerSocket);
+					auctionServer_ServerSocket.userManagement.resetAuctions();
 				}
 			}
 		} catch (IOException e) {

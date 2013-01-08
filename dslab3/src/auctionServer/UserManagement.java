@@ -191,11 +191,13 @@ public class UserManagement {
 							String msg = "!new-bid " + auction.getDescribtion();
 							// send UDP- notofication that he has been oberbidden if he is online
 							if (oldHighestBidder.isOnline()) {
-								try {
-									AuctionServer_UDPSocket.getInstamce().sendMessage(oldHighestBidder.getInternetAdress(), oldHighestBidder.getUdpPort(), msg);
-								} catch (IOException e) {
-									System.out.println("Error: Trying to send UDP- Message to unknown user");
-								}
+								logger.info("would print udp- notification but this function is disabled");
+								// would print UDP- notification...
+//								try {
+//									AuctionServer_UDPSocket.getInstamce().sendMessage(oldHighestBidder.getInternetAdress(), oldHighestBidder.getUdpPort(), msg);
+//								} catch (IOException e) {
+//									logger.error("Error: Trying to send UDP- Message to unknown user");
+//								}
 							}
 							else {
 								// if he is not online store the notification
@@ -226,12 +228,27 @@ public class UserManagement {
 			}
 			answer = "The Aucion- ID '" + auctionID + "' is unknown!";
 		}
-		
+		logger.debug("UserManagement returns: " + answer);
 		return answer;
 	}
 	
-	public String signedBidForAuction(int aucitonID, double amount, User user) {
-		return null;
+	public String signedBidForAuction(int auctionID, double amount, User user, Timestamp timestamp) {
+		Iterator<Auction> iterator = syncAuctionList.iterator();
+		while (iterator.hasNext()) {
+			Auction auction = iterator.next();
+			if (auction.getId() == auctionID && amount > auction.getHightestAmount() && 
+					timestamp.before(new Timestamp(auction.getStartedTimestamp()+auction.getSpareDuration())) &&
+					timestamp.after(new Timestamp(auction.getStartedTimestamp()))) {
+				
+				auction.setHightestAmount(amount);
+				auction.setHighestBidder(user);
+				
+				logger.debug("bidding for signed auciton");
+				return "You successfully bid with " + auction.getHightestAmount() + " on '" + auction.getDescribtion() + 
+						"'. Current highest bid is " + auction.getHightestAmount() + ".";
+			}
+		}
+		return "Bidding was not successful: either your amount was not the hightest or the auction already was closed.";
 	}
 	
 	/**
@@ -375,6 +392,53 @@ public class UserManagement {
 			}
 		}
 		return amount;
+	}
+	
+	/**
+	 * if auction server comes back in Lab3- Stage4, aucitons which should be running
+	 * are reset active.
+	 */
+	public void resetAuctions() {
+		synchronized (syncAuctionList) {
+			Iterator<Auction> iterator = syncAuctionList.iterator();
+			while (iterator.hasNext()) {
+				Auction auction = iterator.next();
+				
+				// if there is some time left -> restart the auction
+				if (new Timestamp(auction.getInterruptedTimestamp()
+						+ auction.getSpareDuration()).after(new Timestamp(
+						System.currentTimeMillis()))) {
+					
+					auction.setActive(true);
+					long newDurationSec = (auction.getDurationSec() * 1000 - (System
+							.currentTimeMillis() - auction
+							.getInterruptedTimestamp())) / 1000;
+					logger.debug("set spare Duration to: " + (newDurationSec)
+							+ " Seconds");
+
+					auction.setDurationSec((int) newDurationSec);
+
+					Auction newAuction = new Auction(auction);
+					newAuction.setActive(true);
+
+					syncAuctionList.remove(auction);
+					syncAuctionList.add(newAuction);
+
+					try {
+						logger.debug("new Auction got started with "
+								+ newDurationSec + " seconds duration");
+
+						timer.schedule(newAuction,
+								newAuction.durationSec * 1000);
+					} catch (IllegalStateException e) {
+						logger.warn("timer was cancelt - restarting timer");
+						timer = new Timer();
+						timer.schedule(newAuction,
+								newAuction.durationSec * 1000);
+					}
+				}
+			}
+		}
 	}
 	
 }

@@ -101,10 +101,12 @@ public class ClientHandler implements Runnable {
 		} catch (IOException e) {
 			// empty
 		}
+		
 		if (!protocol.getUser().getName().equals("")) {
+			logger.debug("ClientHandler set the user offline");
 			userManagement.getUserByName(protocol.getUser().getName()).setOnline(false);
 		}
-
+		
 		try {
 			Timestamp logoutTimestamp = new Timestamp(System.currentTimeMillis());
 			long timestamp = logoutTimestamp.getTime();
@@ -172,7 +174,8 @@ public class ClientHandler implements Runnable {
 			Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
 			while (iterator.hasNext()) {
 				Auction auction = iterator.next();
-				long spare = (auction.getEndOnAucionLongTimestamp()-System.currentTimeMillis());
+				long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
+				auction.setInterruptedTimestamp(System.currentTimeMillis());
 				auction.setSpareDuration(spare);
 				auction.setActive(false);
 				auction.cancel();
