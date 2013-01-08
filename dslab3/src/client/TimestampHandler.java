@@ -110,4 +110,13 @@ public class TimestampHandler implements Runnable {
 		return answer;
 	}
 
+	public void shutdown() {
+		try {
+			in.close();
+			socket.close();
+		} catch (IOException e) {
+			logger.error("error while closing");
+		}
+		out.close();
+	}
 }

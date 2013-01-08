@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 import loadTestingComponent.LoadTestClient;
 
@@ -104,11 +105,14 @@ public class Client {
         }
 		commandListener = new ClientCommandListener(serverChannel, udpPort, this);
 		serverSocket = new Client_ServerSocket(udpPort);
-		Main_Client.clientExecutionService.execute(serverSocket);
-		
-		if (!isTestingClient) {
-			Main_Client.clientExecutionService.execute(commandListener);
-			this.listenToAuctionServer();
+		try {
+			Main_Client.clientExecutionService.execute(serverSocket);
+			if (!isTestingClient) {
+				Main_Client.clientExecutionService.execute(commandListener);
+				this.listenToAuctionServer();
+			}
+		} catch (RejectedExecutionException e) {
+			logger.error("The Auciotn server is currently offline. Please contact the suport and try again later!");
 		}
     }
 	
@@ -238,6 +242,7 @@ public class Client {
 			//udpSocket.shutdown();
 			socket.close();
 			serverChannel.close();
+			serverSocket.shutdown();
 		} catch (IOException e) {
 			// in is already closed or not opened
 		} catch (NullPointerException e) {
