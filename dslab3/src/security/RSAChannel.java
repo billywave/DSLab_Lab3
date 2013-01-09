@@ -60,7 +60,7 @@ public class RSAChannel implements Channel {
 		this.user = user;
 		privateKey = readPrivateKey(user,password);
 		publicKey = readPublicKey(user);
-		return (privateKey != null & publicKey != null);
+		return (privateKey != null && publicKey != null);
 	}
 	
 	public boolean loadRemoteUserPublicKey(String user) {

@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import security.RSAChannel;
 
 import security.SecureServerChannel;
 
@@ -34,17 +35,25 @@ public class AuctionServer {
 	}
 	
 	public void startServer() {
+		String password = "";
+		do {
+			try {
+				System.out.println("Enter pass phrase for RSA Private key:");
+				password = (new BufferedReader(new InputStreamReader(System.in)).readLine());
+				if (password.equals("!exit")) return;
+				SecureServerChannel.setServerPrivateKeyPassword(password);
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		} while (RSAChannel.readPrivateKey("auction-server", password) == null);
+		
 		PropertyConfigurator.configure("src/log4j.properties");        
 		
 		UserManagement userManagement = new UserManagement();
 		
-		System.out.println("Enter pass phrase for RSA Private key:");
-		try {
-			String password = (new BufferedReader(new InputStreamReader(System.in)).readLine());
-			SecureServerChannel.setServerPrivateKeyPassword(password);
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
+		
+		
+		
 		
 		tcpSocket = new AuctionServer_ServerSocket(tcpPort, userManagement, analyticsServerRef, billingServerRef);
 		Main_AuctionServer.auctionServerExecutionService.execute(tcpSocket);

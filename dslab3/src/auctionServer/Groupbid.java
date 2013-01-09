@@ -2,7 +2,6 @@
  * TODO 
  * block client
  * 
- * change usermanagement 285
  */
 
 package auctionServer;
