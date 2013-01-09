@@ -221,6 +221,7 @@ public class SecureClientChannel implements Channel {
 				channel.flush();
 			} else {
 				logger.debug("Secure: Storing client response: " + line);
+				if (!this.loginphase) System.out.println("You have to login first!");
 				messageBuffer.push(line);
 			}
 		}
