@@ -14,12 +14,13 @@ public class GroupBidDenial extends TimerTask {
 	private User user;
 	
 	public GroupBidDenial(User user) {
-		
+		this.user = user;
+		Groupbid.addDenial(user, 1);
 	}
 
 	@Override
 	public void run() {
-		throw new UnsupportedOperationException("Not supported yet.");
+		Groupbid.addDenial(user, -1);
 	}
 	
 }

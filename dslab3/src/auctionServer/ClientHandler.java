@@ -97,9 +97,9 @@ public class ClientHandler implements Runnable {
 				clientChannel.flush();
 			}
 		} catch (NullPointerException e) {
-			
+			e.printStackTrace();
 		} catch (IOException e) {
-			// empty
+			e.printStackTrace();
 		}
 		
 		if (!protocol.getUser().getName().equals("")) {

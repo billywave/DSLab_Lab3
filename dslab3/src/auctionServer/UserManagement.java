@@ -279,10 +279,11 @@ public class UserManagement {
 		while (iterator.hasNext()) {
 			auction = iterator.next();
 			if (auction.getId() == auctionID) {
-				if (!Groupbid.groupBidAllowed(auction, getAmountUsers())) {
+				if (!Groupbid.groupBidAllowed(auction, user, getAmountUsers())) {
+					logger.debug("groupbid denied");
 					Groupbid.deniedRequest(user, timer);
 					
-					return "The number of active auctions with group bids must be less than or equal to the number of group members";
+					return "No more groupbids allowed";
 				}
 				
 				if (amount > auction.getHightestAmount()) {
@@ -336,7 +337,7 @@ public class UserManagement {
 			if (bid.isInitialConfirmer(confirmer)) {
 				logger.debug("Initial confirmer: " + confirmer.getName());
 				synchronized (syncAuctionList) {
-					bid.execute(mClientHandler);
+					bid.execute();
 				}
 			} else logger.debug("Second confirmer: " + confirmer.getName());
 			return "!confirmed";

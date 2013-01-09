@@ -1,11 +1,8 @@
 /*
  * TODO 
- * the number of active auctions with group bids is less than or equal 
- * to the number of group members
- * 
  * block client
  * 
- * 
+ * change usermanagement 285
  */
 
 package auctionServer;
@@ -39,9 +36,26 @@ public class Groupbid {
 		this.bidder = bidder;
 	}
 	
-	public static boolean groupBidAllowed(Auction auction, int amountUsers) {
+	public static boolean groupBidAllowed(Auction auction, User user, int amountUsers) {
 		int sumA = Groupbid.sumActiveAuctionsWithGroupBids();
-		return sumA > amountUsers || (sumA == amountUsers && !Groupbid.hasGroupBid(auction));
+		// number auf active auctions with groupbids must be less or equal than the number of users
+		// doesn't increas the active auctions with groupBids:
+		if (Groupbid.hasGroupBid(auction)) return true;
+		if (sumA >= amountUsers) return false;
+		Logger.getLogger(Groupbid.class).debug("basically spots are open");
+		
+		// only deny request, if more than 4/5 of the spots are occupied
+		if (sumA >= (amountUsers - amountUsers/5)) {
+			int sumDenials = 0;
+			for (Integer denials : groupBidDenials.values()) sumDenials += denials;
+			int userDenials = 0;
+			if (groupBidDenials.containsKey(user)) userDenials = groupBidDenials.get(user);
+			// grant, if user was denied more often than the average plus 2
+			if (userDenials >= sumDenials/amountUsers + 2) return true;
+			return false;
+		}
+		
+		return true;
 	}
 	
 	public static void deniedRequest(User user, Timer timer) {
@@ -50,6 +64,8 @@ public class Groupbid {
 		} catch (IllegalStateException e) {
 			Logger.getLogger(Groupbid.class).warn("timer is already cancelt");
 		}
+		
+		
 	}
 	
 	public void addGroupBid() {
@@ -97,7 +113,7 @@ public class Groupbid {
 		return executed;
 	}
 	
-	public void execute(MClientHandler_RO mClientHandler) {
+	public void execute() {
 		logger.debug("Calling execute method");
 		if (!executed) {
 
@@ -186,5 +202,15 @@ public class Groupbid {
 	
 	public static boolean hasGroupBid(Auction auction) {
 		return activeAuctionsWithGroupBids.contains(auction);
+	}
+	
+//	public static int sumDenials(User user) {
+//		return groupBidDenials.get(user);
+//	}
+//	
+	public static synchronized void addDenial(User user, int n) {
+		if (groupBidDenials.containsKey(user)) {
+			groupBidDenials.put(user,groupBidDenials.get(user) + n);
+		} else groupBidDenials.put(user,n);
 	}
 }
