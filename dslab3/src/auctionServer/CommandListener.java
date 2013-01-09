@@ -58,13 +58,15 @@ public class CommandListener implements Runnable {
 				if (userInput.equals("!close")) {
 					auctionServer_ServerSocket.userManagement.loggoutAll();
 					auctionServer_ServerSocket.closeSocket();
+					AuctionServer.setServerIsOnline(false);
 				}
 				
 				// open the TCP- ServerSocket again to test the server outage function
 				if (userInput.equals("!open")) {
 					auctionServer_ServerSocket.openSocket();
 					Main_AuctionServer.auctionServerExecutionService.execute(auctionServer_ServerSocket);
-					auctionServer_ServerSocket.userManagement.resetAuctions();
+					AuctionServer.setServerIsOnline(true);
+//					auctionServer_ServerSocket.userManagement.resetAuctions();
 				}
 			}
 		} catch (IOException e) {

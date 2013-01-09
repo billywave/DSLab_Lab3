@@ -36,12 +36,13 @@ public class Auction extends TimerTask {
 	UserManagement userManagement;
 	//RMI
 	MClientHandler_RO mClientHandler = null;
-
+	
 	// Server- outage
 	long spareDuration = 0;
 	private boolean active = true;
 	private long startedTimestamp;
 	private long interruptedTimestamp;
+	private Timestamp timeOfLastBid = new Timestamp(System.currentTimeMillis());
 	
 	/**
 	 * Constructor
@@ -202,6 +203,14 @@ public class Auction extends TimerTask {
 		this.interruptedTimestamp = interruptedTimestamp;
 	}
 
+	public Timestamp getTimeOfLastBid() {
+		return timeOfLastBid;
+	}
+
+	public void setTimeOfLastBid(Timestamp timeOfLastBid) {
+		this.timeOfLastBid = timeOfLastBid;
+	}
+
 	public String printHighestAmount() {
 		int testInt = new Double(hightestAmount * 100).intValue();
 
@@ -268,10 +277,17 @@ public class Auction extends TimerTask {
 				logger.error("Remote Object is null");
 			}
 
+			// if the auciton server is offline- just flack the auction to inactive. else remoove it.
 			synchronized (userManagement.syncAuctionList) {
-				logger.debug("removing auciton from syncAuctionList");
 				this.setActive(false);
-				userManagement.syncAuctionList.remove(this); // delete auction from list
+				if (!AuctionServer.isServerIsOnline()) {
+					logger.debug("setting aucitons active flag to false");
+					this.setActive(false);
+				} else {
+					logger.debug("removing auciton from syncAuctionList");
+					userManagement.syncAuctionList.remove(this); // delete auction from list
+				}
+				
 			}
 		} catch (IOException e) {
 			System.out.println("Didn't send Notification.");

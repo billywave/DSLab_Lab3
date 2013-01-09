@@ -3,6 +3,7 @@ package auctionServer;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -97,10 +98,10 @@ public class ClientHandler implements Runnable {
 				clientChannel.flush();
 			}
 		} catch (NullPointerException e) {
-			e.printStackTrace();
+			logger.info("something was null in the client handler while listening to client");
 		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			logger.error("lost connection to client");
+		} 
 		
 		if (!protocol.getUser().getName().equals("")) {
 			logger.debug("ClientHandler set the user offline");
@@ -170,17 +171,17 @@ public class ClientHandler implements Runnable {
 		try {
 			clientChannel.close();
 			socket.close();
-			synchronized (userManagement.syncAuctionList) {
-				Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
-				while (iterator.hasNext()) {
-					Auction auction = iterator.next();
-					long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
-					auction.setInterruptedTimestamp(System.currentTimeMillis());
-					auction.setSpareDuration(spare);
-					auction.setActive(false);
-					auction.cancel();
-				}
-			}
+//			synchronized (userManagement.syncAuctionList) {
+//				Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
+//				while (iterator.hasNext()) {
+//					Auction auction = iterator.next();
+//					long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
+//					auction.setInterruptedTimestamp(System.currentTimeMillis());
+//					auction.setSpareDuration(spare);
+//					auction.setActive(false);
+//					auction.cancel();
+//				}
+//			}
 		} catch (IOException e) {
 		System.out.println("Error: shutting down the ClientHandler failed!");
 		} catch (NullPointerException e) {

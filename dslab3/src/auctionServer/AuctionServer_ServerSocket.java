@@ -83,7 +83,7 @@ public class AuctionServer_ServerSocket implements Runnable {
 	public void closeSocket() {
 		AuctionServer_ServerSocket.listening = false;
 		logger.info("closing the (TCP-) ServerSocket but the Acution Server is alive");
-		UserManagement.timer.cancel();
+//		UserManagement.timer.cancel();
 		
 		Iterator<ClientHandler> listIterator = clientHandlers.iterator();
 		while (listIterator.hasNext()) {

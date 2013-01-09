@@ -242,22 +242,43 @@ public class UserManagement {
 			Iterator<Auction> iterator = syncAuctionList.iterator();
 			while (iterator.hasNext()) {
 				Auction auction = iterator.next();
-				if (auction.getId() == auctionID
-						&& amount > auction.getHightestAmount()
-						&& timestamp.before(new Timestamp(auction.getStartedTimestamp()
-								+ auction.getSpareDuration()))
-						&& timestamp.after(new Timestamp(auction.getStartedTimestamp()))) {
+				if (auction.isActive()) {
+					logger.info("auciton is still active- place a normal bid");
+					this.bidForAuction(user, auctionID, amount);
+				} else {
+					// amount is higher or you are the first bidder with this amount
+					if (amount > auction.getHightestAmount() || timestamp.after(auction.getTimeOfLastBid())) {
+						this.bidForAuction(user, auctionID, amount);
+					} else { // some one else bid less after you- so you might be the winner because you were first
+						if (timestamp.before(auction.getTimeOfLastBid()) && amount >= auction.getHightestAmount()) {
+							auction.setHightestAmount(amount);
+							auction.setHighestBidder(user);
 
-					auction.setHightestAmount(amount);
-					auction.setHighestBidder(user);
-
-					logger.debug("bidding for signed auciton");
-					return "You successfully bid with "
-							+ auction.getHightestAmount() + " on '"
-							+ auction.getDescribtion()
-							+ "'. Current highest bid is "
-							+ auction.getHightestAmount() + ".";
+							logger.debug("bidding for signed auciton because you were first");
+							return "You successfully bid with "
+									+ auction.getHightestAmount() + " on '"
+									+ auction.getDescribtion()
+									+ "'. Current highest bid is "
+									+ auction.getHightestAmount() + ".";
+						}
+					}
 				}
+//				if (auction.getId() == auctionID
+//						&& amount > auction.getHightestAmount()
+//						&& timestamp.before(new Timestamp(auction.getStartedTimestamp()
+//								+ auction.getSpareDuration()))
+//						&& timestamp.after(new Timestamp(auction.getStartedTimestamp()))) {
+//
+//					auction.setHightestAmount(amount);
+//					auction.setHighestBidder(user);
+//
+//					logger.debug("bidding for signed auciton");
+//					return "You successfully bid with "
+//							+ auction.getHightestAmount() + " on '"
+//							+ auction.getDescribtion()
+//							+ "'. Current highest bid is "
+//							+ auction.getHightestAmount() + ".";
+//				}
 			}
 		}
 		return "Bidding was not successful: either your amount was not the hightest or the auction already was closed.";
@@ -410,7 +431,7 @@ public class UserManagement {
 	/**
 	 * if auction server comes back in Lab3- Stage4, aucitons which should be running
 	 * are reset active.
-	 */
+	 
 	public synchronized void resetAuctions() {
 		synchronized (syncAuctionList) {
 				for (int i = 0; i < syncAuctionList.size(); i++) {
@@ -451,6 +472,7 @@ public class UserManagement {
 				}
 		}
 	}
+	*/
 	
 	public void shutdown() {
 		this.shutdown = true;

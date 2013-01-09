@@ -21,6 +21,8 @@ import security.SecureServerChannel;
 public class AuctionServer {
 	private static Logger logger = Logger.getLogger(AuctionServer.class);
 
+	private static boolean serverIsOnline;
+	
 	int tcpPort = 0;
 	AuctionServer_ServerSocket tcpSocket;
 	
@@ -63,5 +65,13 @@ public class AuctionServer {
 		Main_AuctionServer.auctionServerExecutionService.execute(cmdListener);
 		logger.debug("CommandListener thread started");
 		
+	}
+
+	public static boolean isServerIsOnline() {
+		return serverIsOnline;
+	}
+
+	public static void setServerIsOnline(boolean serverIsOnline) {
+		AuctionServer.serverIsOnline = serverIsOnline;
 	}
 }
