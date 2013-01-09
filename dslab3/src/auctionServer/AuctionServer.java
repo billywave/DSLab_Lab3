@@ -53,10 +53,6 @@ public class AuctionServer {
 		
 		UserManagement userManagement = new UserManagement();
 		
-		
-		
-		
-		
 		tcpSocket = new AuctionServer_ServerSocket(tcpPort, userManagement, analyticsServerRef, billingServerRef);
 		Main_AuctionServer.auctionServerExecutionService.execute(tcpSocket);
 		logger.debug("Server Socket thread started");
@@ -72,6 +68,7 @@ public class AuctionServer {
 	}
 
 	public static void setServerIsOnline(boolean serverIsOnline) {
+		logger.debug("server online flag set to " + serverIsOnline);
 		AuctionServer.serverIsOnline = serverIsOnline;
 	}
 }

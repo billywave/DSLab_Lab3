@@ -28,8 +28,8 @@ public class Auction extends TimerTask {
 	double hightestAmount = 0.0;
 	int udpPort = 0;
 	Calendar c;
-	String endOfAuctionTimestamp = "";
-	long endOfAuctionLongTimestamp = 0;
+	String endOfAuctionStringTimestamp = "";
+//	long endOfAuctionLongTimestamp = 0;
 	String describtion = "";
 	User owner = null;
 	User highestBidder = null;
@@ -38,11 +38,10 @@ public class Auction extends TimerTask {
 	MClientHandler_RO mClientHandler = null;
 	
 	// Server- outage
-	long spareDuration = 0;
 	private boolean active = true;
-	private long startedTimestamp;
-	private long interruptedTimestamp;
+	private Timestamp startedTimestamp;
 	private Timestamp timeOfLastBid = new Timestamp(System.currentTimeMillis());
+	private Timestamp endOfAuctionTimestamp;
 	
 	/**
 	 * Constructor
@@ -64,50 +63,15 @@ public class Auction extends TimerTask {
 		setTimestamp();
 	}
 
-	public Auction(Auction auction) {
-		this.id = auction.getId();
-		this.durationSec = auction.getDurationSec();
-		this.hightestAmount = auction.getHightestAmount();
-		this.udpPort = auction.udpPort;
-		this.c = auction.c;
-		this.endOfAuctionTimestamp = auction.getEndOfAuctionTimestamp();
-		this.endOfAuctionLongTimestamp = auction.getEndOfAucionLongTimestamp();
-		this.describtion = auction.getDescribtion();
-		this.owner = auction.getOwner();
-		this.highestBidder = auction.getHighestBidder();
-		this.userManagement = auction.userManagement;
-		
-		//RMI
-		this.mClientHandler = auction.mClientHandler;
-
-		// Server- outage
-		this.spareDuration = auction.spareDuration;
-		this.active = auction.isActive();
-		this.startedTimestamp = auction.getStartedTimestamp();
-		this.interruptedTimestamp = auction.getInterruptedTimestamp();
-		setTimestamp(auction.getStartedTimestamp());
-	}
-	
-	private synchronized void setTimestamp(long startedOriginallyAt) {
-		startedTimestamp = startedOriginallyAt;
-		
-		c = Calendar.getInstance();
-		c.getTime();
-		c.setTimeInMillis((c.getTimeInMillis() + durationSec * 1000));
-		endOfAuctionLongTimestamp = c.getTimeInMillis();
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		endOfAuctionTimestamp = sdf.format(c.getTime());
-	}
-	
 	private synchronized void setTimestamp() {
-		startedTimestamp = System.currentTimeMillis();
+		startedTimestamp = new Timestamp(System.currentTimeMillis());
 		
 		c = Calendar.getInstance();
 		c.getTime();
 		c.setTimeInMillis((c.getTimeInMillis() + durationSec * 1000));
-		endOfAuctionLongTimestamp = c.getTimeInMillis();
+		endOfAuctionTimestamp = new Timestamp(System.currentTimeMillis() + durationSec*1000);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		endOfAuctionTimestamp = sdf.format(c.getTime());
+		endOfAuctionStringTimestamp = sdf.format(c.getTime());
 	}
 
 	public int getId() {
@@ -162,23 +126,10 @@ public class Auction extends TimerTask {
 		this.owner = owner;
 	}
 
-	public String getEndOfAuctionTimestamp() {
-		return endOfAuctionTimestamp;
+	public String getEndOfAuctionStringTimestamp() {
+		return endOfAuctionStringTimestamp;
 	}
 
-	public long getEndOfAucionLongTimestamp() {
-		return endOfAuctionLongTimestamp;
-	}
-	
-	public long getSpareDuration() {
-		return spareDuration;
-	}
-
-	public synchronized void setSpareDuration(long spareDuration) {
-		logger.debug("setting spareDuration to " + spareDuration/1000 + "sec");
-		this.spareDuration = spareDuration;
-	}
-	
 	public boolean isActive() {
 		return active;
 	}
@@ -187,20 +138,12 @@ public class Auction extends TimerTask {
 		this.active = active;
 	}
 
-	public long getStartedTimestamp() {
+	public Timestamp getStartedTimestamp() {
 		return startedTimestamp;
 	}
 
-	public synchronized void setStartedTimestamp(long startedTimestamp) {
+	public synchronized void setStartedTimestamp(Timestamp startedTimestamp) {
 		this.startedTimestamp = startedTimestamp;
-	}
-
-	public long getInterruptedTimestamp() {
-		return interruptedTimestamp;
-	}
-
-	public synchronized void setInterruptedTimestamp(long interruptedTimestamp) {
-		this.interruptedTimestamp = interruptedTimestamp;
 	}
 
 	public Timestamp getTimeOfLastBid() {
@@ -209,6 +152,10 @@ public class Auction extends TimerTask {
 
 	public void setTimeOfLastBid(Timestamp timeOfLastBid) {
 		this.timeOfLastBid = timeOfLastBid;
+	}
+
+	public Timestamp getEndOfAuctionTimestamp() {
+		return endOfAuctionTimestamp;
 	}
 
 	public String printHighestAmount() {
@@ -280,13 +227,15 @@ public class Auction extends TimerTask {
 			// if the auciton server is offline- just flack the auction to inactive. else remoove it.
 			synchronized (userManagement.syncAuctionList) {
 				this.setActive(false);
-				if (!AuctionServer.isServerIsOnline()) {
-					logger.debug("setting aucitons active flag to false");
-					this.setActive(false);
-				} else {
-					logger.debug("removing auciton from syncAuctionList");
-					userManagement.syncAuctionList.remove(this); // delete auction from list
-				}
+				logger.debug("setting aucitons active flag to false");
+				
+//				if (!AuctionServer.isServerIsOnline()) {
+//					logger.info("setting aucitons active flag to false");
+//					this.setActive(false);
+//				} else {
+//					logger.info("removing auciton from syncAuctionList");
+//					userManagement.syncAuctionList.remove(this); // delete auction from list
+//				}
 				
 			}
 		} catch (IOException e) {

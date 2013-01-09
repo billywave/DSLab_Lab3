@@ -260,7 +260,7 @@ public class CommunicationProtocol {
 			String response = "An auction '" + auction.describtion + 
 				"' with id " + auction.getId() + 
 				" has been created and will end on " + 
-				auction.getEndOfAuctionTimestamp() + " CET.";
+				auction.getEndOfAuctionStringTimestamp() + " CET.";
 			logger.info(response);
 			return response;
 		}

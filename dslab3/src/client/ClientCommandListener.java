@@ -150,7 +150,7 @@ public class ClientCommandListener implements Runnable {
 				serverChannel.println("!getFirstClientList");
 				serverChannel.flush();
 				
-				/* send offline bids if any */
+				/* send offline bids if any 
 	        	if (serverIsOnline && !offlineBidList.isEmpty()) {
 	        		Iterator<String> iterator = offlineBidList.iterator();
 	        		synchronized (offlineBidList) {
@@ -162,7 +162,7 @@ public class ClientCommandListener implements Runnable {
 						}
 						offlineBidList.clear();
 					}
-	        	}
+	        	}*/
 			} 
 			else if (commandArray.length > 0 && commandArray[0].equals("!bid") && !serverIsOnline) {
 				logger.debug("trying to get signed timestamp");

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -169,6 +170,22 @@ public class Client {
 	    	    			System.out.println(incommingMessage.substring(7));
     	    			}
     	    			incommingMessage = "";
+    	    		}
+    	    		else if (incommingMessage.startsWith("Successfully logged in as")) {
+    	    			/* send offline bids if any */
+    		        	if (commandListener.serverIsOnline && !commandListener.offlineBidList.isEmpty()) {
+    		        		Iterator<String> iterator = commandListener.offlineBidList.iterator();
+    		        		synchronized (commandListener.offlineBidList) {
+    							while (iterator.hasNext()) {
+    								String msg = iterator.next();
+    								logger.debug("sending msg: " + msg + "to the Auction Server");
+    								serverChannel.println(msg);
+    								serverChannel.flush();
+    							}
+    							commandListener.offlineBidList.clear();
+    						}
+    		        	}
+    		        	System.out.println(incommingMessage);
     	    		}
     	    		else {
     	    			// if testing- dont print out, else print out
