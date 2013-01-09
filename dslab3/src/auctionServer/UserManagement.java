@@ -168,7 +168,7 @@ public class UserManagement {
 			
 			while (iterator.hasNext()) {
 				auction = iterator.next();
-				if (auction.getId() == auctionID) {
+				if (auction.getId() == auctionID && auction.isActive()) {
 					logger.debug("found auction in the syncAuctionList");
 					if (amount > auction.getHightestAmount()) {
 						User oldHighestBidder = auction.getHighestBidder();
@@ -244,11 +244,11 @@ public class UserManagement {
 				Auction auction = iterator.next();
 				if (auction.isActive()) {
 					logger.info("auciton is still active- place a normal bid");
-					this.bidForAuction(user, auctionID, amount);
+					return this.bidForAuction(user, auctionID, amount);
 				} else {
 					// amount is higher or you are the first bidder with this amount
 					if (amount > auction.getHightestAmount() || timestamp.after(auction.getTimeOfLastBid())) {
-						this.bidForAuction(user, auctionID, amount);
+						return this.bidForAuction(user, auctionID, amount);
 					} else { // some one else bid less after you- so you might be the winner because you were first
 						if (timestamp.before(auction.getTimeOfLastBid()) && amount >= auction.getHightestAmount()) {
 							auction.setHightestAmount(amount);

@@ -104,7 +104,8 @@ public class ClientCommandListener implements Runnable {
 			} catch (IOException e) {
 				logger.error("coulden't get inputstream");
 			}
-
+			client.shutdown();
+			
 			// propper shutdown of the ExecutorService
 			Main_Client.clientExecutionService.shutdown(); // Disable new tasks
 															// from being
@@ -129,7 +130,6 @@ public class ClientCommandListener implements Runnable {
 				Thread.currentThread().interrupt();
 			}
 
-			client.shutdown();
 			exit = true;
 		} else {
 			String[] commandArray = userInput.split(" ");

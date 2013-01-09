@@ -62,7 +62,7 @@ public class CommandListener implements Runnable {
 				}
 				
 				// open the TCP- ServerSocket again to test the server outage function
-				if (userInput.equals("!open")) {
+				if (userInput.equals("!reconnect")) {
 					auctionServer_ServerSocket.openSocket();
 					Main_AuctionServer.auctionServerExecutionService.execute(auctionServer_ServerSocket);
 					AuctionServer.setServerIsOnline(true);

@@ -130,7 +130,6 @@ public class CommunicationProtocol {
 			return getClientList();
 		}
 		if (cmdPart.equals("!getFirstClientList")) {
-			logger.debug("!getFirstClientList - command set");
 			return getFirstClientList();
 		}
 		if (cmdPart.equals("!signedBid")) {
@@ -472,41 +471,42 @@ public class CommunicationProtocol {
 	 * @return
 	 */
 	private String determineSignedBid() {
-		String[] timestampPart1 = stringParts[3].split(":");
-		String[] timestampPart2 = stringParts[4].split(":");
-		
-		String signature1Base64 = timestampPart1[2];
-		String signature2Base64 = timestampPart2[2];
-		
-		String signer1Name = timestampPart1[0];
-		String signer2Name = timestampPart2[0];
-		
-		String signedMessage1 = "!timestamp " + stringParts[1] + " "
-				+ stringParts[2] + " " + timestampPart1[1];
+		if (stringParts.length >= 4) {
+			String[] timestampPart1 = stringParts[3].split(":");
+			String[] timestampPart2 = stringParts[4].split(":");
+			
+			String signature1Base64 = timestampPart1[2];
+			String signature2Base64 = timestampPart2[2];
+			
+			String signer1Name = timestampPart1[0];
+			String signer2Name = timestampPart2[0];
+			
+			String signedMessage1 = "!timestamp " + stringParts[1] + " "
+					+ stringParts[2] + " " + timestampPart1[1];
 
-		String signedMessage2 = "!timestamp " + stringParts[1] + " "
-				+ stringParts[2] + " " + timestampPart2[1];
-		
-		boolean verifySignature1 = verifySignedMessage(signedMessage1, signer1Name, signature1Base64);
-		boolean verifySignature2 = verifySignedMessage(signedMessage2, signer2Name, signature2Base64);
-		
-		if (verifySignature1 && verifySignature2) {
-			logger.info("Verifikation of the bid was successfull!");
+			String signedMessage2 = "!timestamp " + stringParts[1] + " "
+					+ stringParts[2] + " " + timestampPart2[1];
 			
-			int auctionID = Integer.parseInt(stringParts[1]);
-			double price = Double.parseDouble(stringParts[2]);
-			price = (double)(Math.round(price*100))/100;
+			boolean verifySignature1 = verifySignedMessage(signedMessage1, signer1Name, signature1Base64);
+			boolean verifySignature2 = verifySignedMessage(signedMessage2, signer2Name, signature2Base64);
 			
-			if (price <= 0 ) {
-				return "Error: The amount has to be > 0!";
+			if (verifySignature1 && verifySignature2) {
+				logger.info("Verifikation of the bid was successfull!");
+				
+				int auctionID = Integer.parseInt(stringParts[1]);
+				double price = Double.parseDouble(stringParts[2]);
+				price = (double)(Math.round(price*100))/100;
+				
+				if (price <= 0 ) {
+					return "Error: The amount has to be > 0!";
+				}
+				
+				// determine arethmetic middle of the two timestamps
+				long middleOfTimestamps = (Long.parseLong(timestampPart1[1]) + Long.parseLong(timestampPart2[1]))/2; 
+				
+				return signedBidForAuctions(auctionID, price, new Timestamp(middleOfTimestamps));
 			}
-			
-			// determine arethmetic middle of the two timestamps
-			long middleOfTimestamps = (Long.parseLong(timestampPart1[1]) + Long.parseLong(timestampPart2[1]))/2; 
-			
-			return signedBidForAuctions(auctionID, price, new Timestamp(middleOfTimestamps));
 		}
-		
 		return "Error: The signature of the bid could not be verified!";
 	}
 
