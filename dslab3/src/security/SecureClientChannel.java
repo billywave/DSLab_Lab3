@@ -200,7 +200,7 @@ public class SecureClientChannel implements Channel {
 			rsaChannel.setEncryptedRead(false);
 			tcpChannel.println("!list");
 			tcpChannel.flush();
-		} else if (splitLine.length >= 1 && splitLine[0].equals("!logout")) {
+		} else if (splitLine.length >= 1 && splitLine[0].equals("!logout") && authorized) {
 			authorized = false;
 			channel = rsaChannel;
 			loginName = "";
