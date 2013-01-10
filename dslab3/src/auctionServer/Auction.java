@@ -60,6 +60,7 @@ public class Auction extends TimerTask {
 		this.udpPort = udpPort;
 		this.userManagement = userManagement;
 		this.mClientHandler = mClientHandler;
+		this.setActive(true);
 		setTimestamp();
 	}
 
@@ -107,6 +108,7 @@ public class Auction extends TimerTask {
 	}
 
 	public synchronized void setHighestBidder(User highestBidder) {
+		logger.debug("setting highest bidder: " + highestBidder.getName());
 		this.highestBidder = highestBidder;
 	}
 

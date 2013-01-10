@@ -528,8 +528,7 @@ public class CommunicationProtocol {
 		try {
 			signature = Signature.getInstance("SHA512withRSA");
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("didn't find the signatur- algorithm");
 		}
 		
 		/* Initializing the object with the public key */
@@ -537,8 +536,7 @@ public class CommunicationProtocol {
 		try {
 			signature.initVerify(publicKey);
 		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("invalid key");
 		}
 
 		/* Update and verify the data */
@@ -549,8 +547,7 @@ public class CommunicationProtocol {
 			logger.info("signature from " + signerName + " verifies: " + verifies);
 			if (!verifies) logger.debug("message: " + message);
 		} catch (SignatureException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("didn't find the signatur- algorithm");
 		}
 		return verifies;
 	}
@@ -565,8 +562,12 @@ public class CommunicationProtocol {
 	 * @return
 	 */
 	private String signedBidForAuctions(int auctionID, double amount, Timestamp timestamp) {
+		if (user.isOnline()) {
+			return userManagement.signedBidForAuction(auctionID, amount, user, timestamp);
+		} else {
+			return "You have to log in first!";
+		}
 		
-		return userManagement.signedBidForAuction(auctionID, amount, user, timestamp);
 	}
 	
 	/**

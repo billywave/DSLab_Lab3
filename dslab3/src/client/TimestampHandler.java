@@ -83,10 +83,6 @@ public class TimestampHandler implements Runnable {
 					logger.error("didn't find the algorithm for signature");
 				}
 				/* Initializing the object with a private key */
-				
-				/**
-				 * TODO Alex: find user and password
-				 */
 				PrivateKey privateKey = RSAChannel.getPrivateKey();
 				
 				try {
@@ -97,16 +93,13 @@ public class TimestampHandler implements Runnable {
 					byte[] signatureArray = signature.sign();
 					tmpAnswer = tmpAnswer + " " + new String(Base64.encode(signatureArray));
 				} catch (InvalidKeyException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.error("got invalid key");
 				} catch (SignatureException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.error("wrong signatur format");
 				}
 				answer = tmpAnswer;
 			}
 		}
-		
 		return answer;
 	}
 

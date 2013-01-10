@@ -3,9 +3,7 @@ package auctionServer;
 import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -245,9 +243,12 @@ public class UserManagement {
 			while (iterator.hasNext()) {
 				Auction auction = iterator.next();
 				if (auction.isActive()) {
+					logger.debug("auction ist still active");
 					if (amount == auction.getHightestAmount() && timestamp.before(auction.getTimeOfLastBid())) {
 						logger.debug("bidding for signed auciton because you were first");
 						auction.setTimeOfLastBid(timestamp);
+						auction.setHighestBidder(user);
+						auction.setHightestAmount(amount);
 						return "You successfully bid with "
 								+ auction.getHightestAmount() + " on '"
 								+ auction.getDescribtion()
@@ -274,12 +275,13 @@ public class UserManagement {
 									+ "'. Current highest bid is "
 									+ auction.getHightestAmount() + ".";
 						} else {
-							Calendar c = Calendar.getInstance();
-							c.getTime();
-							c.setTimeInMillis((auction.getEndOfAuctionTimestamp().getTime()));
-							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-							String aucitontimestamp = sdf.format(c.getTime());
-							return "Your signed timestamp is: " + timestamp + " but the auciton closed at: " + aucitontimestamp;
+//							Calendar c = Calendar.getInstance();
+//							c.getTime();
+//							c.setTimeInMillis((auction.getEndOfAuctionTimestamp().getTime()));
+//							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+//							String aucitontimestamp = sdf.format(c.getTime());
+							logger.debug("You bid at:        " + timestamp + "\nthe auction ran out at: " + auction.getEndOfAuctionTimestamp());
+							return "Your signed timestamp contains a time later than the end of the auction.";
 						}
 					} else { // some one else bid the same, but after you- so you might be the winner because you were first
 						if (timestamp.before(auction.getTimeOfLastBid()) && amount == auction.getHightestAmount()) {

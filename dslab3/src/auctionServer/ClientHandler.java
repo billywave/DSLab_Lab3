@@ -3,14 +3,12 @@ package auctionServer;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
-import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
@@ -171,19 +169,8 @@ public class ClientHandler implements Runnable {
 		try {
 			clientChannel.close();
 			socket.close();
-//			synchronized (userManagement.syncAuctionList) {
-//				Iterator<Auction> iterator = userManagement.syncAuctionList.iterator();
-//				while (iterator.hasNext()) {
-//					Auction auction = iterator.next();
-//					long spare = (auction.getEndOfAucionLongTimestamp()-System.currentTimeMillis());
-//					auction.setInterruptedTimestamp(System.currentTimeMillis());
-//					auction.setSpareDuration(spare);
-//					auction.setActive(false);
-//					auction.cancel();
-//				}
-//			}
 		} catch (IOException e) {
-		System.out.println("Error: shutting down the ClientHandler failed!");
+		System.out.println("Error: muting the ClientHandler failed!");
 		} catch (NullPointerException e) {
 			// timer was not instancated
 		}

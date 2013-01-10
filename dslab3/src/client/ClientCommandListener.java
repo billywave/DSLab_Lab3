@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -254,12 +253,8 @@ public class ClientCommandListener implements Runnable {
 			out = new PrintWriter(socket1.getOutputStream(), true);
 	        in = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
 		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+			logger.error("unknown host");
+		} catch (IOException e1) { }
 		
 		String auctionID = commandArray[1];
 		String price = commandArray[2];
@@ -269,10 +264,7 @@ public class ClientCommandListener implements Runnable {
 		try {
 			signedAnswer = in.readLine();
 			logger.debug("got signed answer");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} catch (IOException e) { }
 		return signedAnswer;
 	}
 	

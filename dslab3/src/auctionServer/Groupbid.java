@@ -6,9 +6,14 @@
 
 package auctionServer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+
 import org.apache.log4j.Logger;
-import rmi_Interfaces.MClientHandler_RO;
 
 public class Groupbid {
 	private Logger logger = Logger.getLogger(this.getClass());
@@ -117,7 +122,7 @@ public class Groupbid {
 		if (!executed) {
 
 
-			User oldHighestBidder = auction.getHighestBidder();
+//			User oldHighestBidder = auction.getHighestBidder();
 
 			auction.setHightestAmount(amount);
 			auction.setHighestBidder(bidder);

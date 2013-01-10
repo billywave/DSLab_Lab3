@@ -35,6 +35,7 @@ public class Client {
 	
 	List<OnlineUser> onlineUsers = new ArrayList<OnlineUser>();
 	
+	boolean shutudown = false;
 	boolean ioNotFound = false;
 	boolean isTestingClient = false;
 	
@@ -212,7 +213,7 @@ public class Client {
     			boolean auctionServerIsOnline = false; // for Client itself
     			commandListener.serverIsOnline = false; // for comand listener- to catch interactive commands
     			
-    			while (!auctionServerIsOnline) {
+    			while (!auctionServerIsOnline && !shutudown) {
     				
     				try {
         				synchronized(this) {
@@ -257,6 +258,7 @@ public class Client {
 	public void shutdown() {
 		try {
 			//udpSocket.shutdown();
+			this.shutudown = true;
 			socket.close();
 			serverChannel.close();
 			serverSocket.shutdown();
