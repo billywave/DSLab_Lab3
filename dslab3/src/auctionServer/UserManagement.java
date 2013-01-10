@@ -258,10 +258,10 @@ public class UserManagement {
 					logger.debug("auciton is still active- place a normal bid");
 					auction.setTimeOfLastBid(timestamp);
 					return this.bidForAuction(user, auctionID, amount);
-				} else { // already closed
-					// amount is higher or you are the first bidder with this amount
-					if (amount > auction.getHightestAmount() || timestamp.after(auction.getTimeOfLastBid())) {
-						if (timestamp.before(auction.getEndOfAuctionTimestamp())) {
+				} else { // already closed / not active
+					// amount is higher than the last
+					if (amount > auction.getHightestAmount()) {
+						if (timestamp.before(auction.getEndOfAuctionTimestamp()) || timestamp.after(auction.getStartedTimestamp())) {
 							logger.debug("inactive auciton had a signed timestamp and will be bidden on");
 							
 							auction.setHightestAmount(amount);
@@ -283,20 +283,29 @@ public class UserManagement {
 							logger.debug("You bid at:        " + timestamp + "\nthe auction ran out at: " + auction.getEndOfAuctionTimestamp());
 							return "Your signed timestamp contains a time later than the end of the auction.";
 						}
-					} else { // some one else bid the same, but after you- so you might be the winner because you were first
-						if (timestamp.before(auction.getTimeOfLastBid()) && amount == auction.getHightestAmount()) {
-							auction.setHightestAmount(amount);
-							auction.setHighestBidder(user);
-
-							logger.debug("bidding for signed auciton because you were first");
-							auction.setTimeOfLastBid(timestamp);
-							return "You successfully bid with "
-									+ auction.getHightestAmount() + " on '"
-									+ auction.getDescribtion()
-									+ "'. Current highest bid is "
-									+ auction.getHightestAmount() + ".";
-						}
 					}
+					// amount is the last but you where the fist -> your bid will take place
+					if (amount == auction.getHightestAmount() && timestamp.before(auction.getTimeOfLastBid())) {
+						auction.setHightestAmount(amount);
+						auction.setHighestBidder(user);
+
+						logger.debug("bidding for signed auciton because you were first");
+						auction.setTimeOfLastBid(timestamp);
+						return "You successfully bid with "
+								+ auction.getHightestAmount() + " on '"
+								+ auction.getDescribtion()
+								+ "'. Current highest bid is "
+								+ auction.getHightestAmount() + ".";
+					}
+					if (timestamp.after(auction.getEndOfAuctionTimestamp()) || timestamp.before(auction.getStartedTimestamp())) {
+						return "Your signed timestamp was not in the aucitons active period!";
+					}
+					if (amount < auction.getHightestAmount()) {
+						return "Your amount hast to be higher than: " + auction.getHightestAmount();
+					}
+					else return "You unsuccessfully bid with " + printHighestAmount(amount) + " on '" + 
+					auction.getDescribtion() + "'. Current highest bid is " + auction.getHightestAmount() + ".";
+					
 				}
 			}
 		}
@@ -423,7 +432,7 @@ public class UserManagement {
 				users += user.getInternetAdress().toString().substring(1) + ":" + user.getUdpPort() + " - " + user.getName() + "\n";
 			}
 		}
-		return users;
+		return users.substring(0, users.length()-1);
 	}
 	
 	public Timer getTimer() {

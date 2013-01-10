@@ -31,7 +31,11 @@ public class CommandListener implements Runnable {
 				// shut dwon if input equals "!exit".
 				if (userInput.equals("!exit")) {
 					exit = true;
-					stdIn.close();
+					try {
+						stdIn.close();
+					} catch (Exception e) {
+						System.out.println("closing the BufferedReader didn't work");
+					}
 					
 					AuctionServer_ServerSocket.shutdown();
 					

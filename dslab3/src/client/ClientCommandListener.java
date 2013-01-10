@@ -30,6 +30,7 @@ public class ClientCommandListener implements Runnable {
 	
 	Client client;
 	boolean serverIsOnline = true;
+	boolean stopSigning = false;
 	final List<String> offlineBidList = Collections.synchronizedList(new ArrayList<String>());
 	
 	public ClientCommandListener(Channel serverChannel, int udpPort, Client client) {
@@ -60,7 +61,7 @@ public class ClientCommandListener implements Runnable {
 			}
 			// stutdown when exit
 			if (exit == true) {
-
+				
 				stdIn.close();
 
 				// propper shutdown of the ExecutorService
@@ -89,6 +90,7 @@ public class ClientCommandListener implements Runnable {
 				}
 
 				client.shutdown();
+				
 			}
 		} catch (IOException e) {
 			System.out.println("Error: Failed to read from stdIn!");
@@ -98,38 +100,36 @@ public class ClientCommandListener implements Runnable {
 	protected void processInput(String userInput) {
 		if (userInput.equals("!end")) {
 			exit = true;
-			try {
-				stdIn.close();
-			} catch (IOException e) {
-				logger.error("coulden't get inputstream");
-			}
-			client.shutdown();
-			
-			// propper shutdown of the ExecutorService
-			Main_Client.clientExecutionService.shutdown(); // Disable new tasks
-															// from being
-															// submitted
-			try {
-				// Wait a while for existing tasks to terminate
-				if (!Main_Client.clientExecutionService.awaitTermination(3,
-						TimeUnit.SECONDS)) {
-					Main_Client.clientExecutionService.shutdownNow(); // Cancel
-																		// currently
-																		// executing
-																		// tasks
-					// Wait a while for tasks to respond to being cancelled
-					if (!Main_Client.clientExecutionService.awaitTermination(3,
-							TimeUnit.SECONDS))
-						System.err.println("Pool did not terminate");
-				}
-			} catch (InterruptedException ie) {
-				// (Re-)Cancel if current thread also interrupted
-				Main_Client.clientExecutionService.shutdownNow();
-				// Preserve interrupt status
-				Thread.currentThread().interrupt();
-			}
-
-			exit = true;
+//			try {
+//				stdIn.close();
+//			} catch (IOException e) {
+//				logger.error("coulden't get inputstream");
+//			}
+//			client.shutdown();
+//			
+//			// propper shutdown of the ExecutorService
+//			Main_Client.clientExecutionService.shutdown(); // Disable new tasks
+//															// from being
+//															// submitted
+//			try {
+//				// Wait a while for existing tasks to terminate
+//				if (!Main_Client.clientExecutionService.awaitTermination(3,
+//						TimeUnit.SECONDS)) {
+//					Main_Client.clientExecutionService.shutdownNow(); // Cancel
+//																		// currently
+//																		// executing
+//																		// tasks
+//					// Wait a while for tasks to respond to being cancelled
+//					if (!Main_Client.clientExecutionService.awaitTermination(3,
+//							TimeUnit.SECONDS))
+//						System.err.println("Pool did not terminate");
+//				}
+//			} catch (InterruptedException ie) {
+//				// (Re-)Cancel if current thread also interrupted
+//				Main_Client.clientExecutionService.shutdownNow();
+//				// Preserve interrupt status
+//				Thread.currentThread().interrupt();
+//			}
 		} else {
 			String[] commandArray = userInput.split(" ");
 			if (commandArray.length > 1 && commandArray[0].equals("!login")) {
@@ -149,19 +149,6 @@ public class ClientCommandListener implements Runnable {
 				serverChannel.println("!getFirstClientList");
 				serverChannel.flush();
 				
-				/* send offline bids if any 
-	        	if (serverIsOnline && !offlineBidList.isEmpty()) {
-	        		Iterator<String> iterator = offlineBidList.iterator();
-	        		synchronized (offlineBidList) {
-						while (iterator.hasNext()) {
-							String msg = iterator.next();
-							logger.debug("sending msg: " + msg + "to the Auction Server");
-							serverChannel.println(msg);
-							serverChannel.flush();
-						}
-						offlineBidList.clear();
-					}
-	        	}*/
 			} 
 			else if (commandArray.length > 0 && commandArray[0].equals("!bid") && !serverIsOnline) {
 				logger.debug("trying to get signed timestamp");
@@ -206,22 +193,24 @@ public class ClientCommandListener implements Runnable {
 						signedTimestamp1 = reiciveSignedTimestamp(signer1, commandArray);
 						signedTimestamp2 = reiciveSignedTimestamp(signer2, commandArray);
 						
-						String[] signedArray1 = signedTimestamp1.split(" ");
-						String[] signedArray2 = signedTimestamp2.split(" ");
-						
-						String actalTimestamp1 = signedArray1[3];
-						String actalTimestamp2 = signedArray2[3];
-						
-						String signature1 = signedArray1[4];
-						String signature2 = signedArray2[4];
-						
-						String signedBid = "!signedBid " + auctionID + " " + price + " " + 
-								signer1.getName() + ":" + actalTimestamp1 + ":" + signature1 + " " + 
-								signer2.getName() + ":" + actalTimestamp2 + ":" + signature2;
-						offlineBidList.add(signedBid);
-						
-						logger.debug("Created signed bid and stored it in List");
-						
+						// just do this if your signing partners where online
+						if (!stopSigning) {
+							String[] signedArray1 = signedTimestamp1.split(" ");
+							String[] signedArray2 = signedTimestamp2.split(" ");
+							
+							String actalTimestamp1 = signedArray1[3];
+							String actalTimestamp2 = signedArray2[3];
+							
+							String signature1 = signedArray1[4];
+							String signature2 = signedArray2[4];
+							
+							String signedBid = "!signedBid " + auctionID + " " + price + " " + 
+									signer1.getName() + ":" + actalTimestamp1 + ":" + signature1 + " " + 
+									signer2.getName() + ":" + actalTimestamp2 + ":" + signature2;
+							offlineBidList.add(signedBid);
+							
+							logger.debug("Created signed bid and stored it in List");
+						}
 					}
 					
 				}
@@ -246,7 +235,7 @@ public class ClientCommandListener implements Runnable {
 	private String reiciveSignedTimestamp(OnlineUser signer, String[] commandArray) {
 		PrintWriter out = null;
         BufferedReader in = null;
-		String signedAnswer = "";
+		String signedAnswer = "Bid was not successfull!";
 		
 		try {
 			Socket socket1 = new Socket(signer.getIP(), signer.getPort());
@@ -259,12 +248,19 @@ public class ClientCommandListener implements Runnable {
 		String auctionID = commandArray[1];
 		String price = commandArray[2];
 		logger.debug("request signed timestamp with msg: " + "!getTimestamp " + auctionID + " " + price);
+		try {
 		out.print("!getTimestamp " + auctionID + " " + price + "\n");
 		out.flush();
-		try {
-			signedAnswer = in.readLine();
-			logger.debug("got signed answer");
-		} catch (IOException e) { }
+		signedAnswer = in.readLine();
+		logger.debug("got signed answer");
+		} catch (NullPointerException e) {
+			logger.error("Your signing partner went offline. Please try again.");
+			stopSigning = true;
+		} catch (IOException e) { 
+			logger.error("Your signing partner went offline.  Please try again.");
+			stopSigning = true;
+		}
+		
 		return signedAnswer;
 	}
 	

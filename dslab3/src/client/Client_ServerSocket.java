@@ -57,5 +57,6 @@ public class Client_ServerSocket implements Runnable {
 		while (iterator.hasNext()) {
 			iterator.next().shutdown();
 		}
+		
 	}
 }

@@ -111,5 +111,6 @@ public class TimestampHandler implements Runnable {
 			logger.error("error while closing");
 		}
 		out.close();
+		
 	}
 }

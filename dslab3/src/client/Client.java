@@ -225,6 +225,7 @@ public class Client {
         						commandListener.setServerChannel(serverChannel);
         						commandListener.setServerIsOnline(true);
         						logger.info("The Aucitonserver just went online again. Please log in again!");
+        						System.out.println("The Aucitonserver just went online again. Please log in again!");
         						listenToAuctionServer();
         					} catch (UnknownHostException e1) {
         						// do not display every try.
@@ -262,6 +263,7 @@ public class Client {
 			socket.close();
 			serverChannel.close();
 			serverSocket.shutdown();
+			
 		} catch (IOException e) {
 			// in is already closed or not opened
 		} catch (NullPointerException e) {
